@@ -1,0 +1,3 @@
+ensure that look up tables are resistant to being converted to a symbolic expression by something like C3,
+Ensure that function substitutions can occur, note a 32 bit of entropy of a function that operates on standard integers. It's likely unique among 32 bit functions because the look up table for such a function would be 32× two to the 32×2 to the 32, and the LUT space certainly does not collide for 32 bits of complexity of function.
+Best bet is probably making sure LUT's are very hard to reverse, possibly by using high entropy functions
