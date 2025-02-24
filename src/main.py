@@ -299,38 +299,7 @@ def noarg(ast, globals):
     original_params = list(params)
     chosen_fx.decl.type.args.params = []
 
-    def process_stmt(stmt, target_func, original_params, global_map):
-        # If the statement is a function call to the target function, add assignments.
-        if isinstance(stmt, c_ast.FuncCall) and isinstance(stmt.name, c_ast.ID) and stmt.name.name == target_func:
-            args = []
-            if stmt.args and isinstance(stmt.args, c_ast.ExprList):
-                args = stmt.args.exprs
-            assignments = []
-            for i, param in enumerate(original_params):
-                if i < len(args):
-                    assignments.append(c_ast.Assignment(
-                        op="=",
-                        lvalue=c_ast.ID(name=global_map[param.name]),
-                        rvalue=args[i]
-                    ))
-            # Remove arguments from the function call so it matches the no-args definition.
-            stmt.args = None
-            # Replace the call with assignments followed by the call.
-            return assignments + [stmt]
-        return [stmt]
-
-    def transform_calls(node, target_func, original_params, global_map):
-        # If the node has a block_items attribute, process each statement.
-        if hasattr(node, 'block_items') and node.block_items:
-            new_block = []
-            for s in node.block_items:
-                # Recurse into nested compound statements.
-                transform_calls(s, target_func, original_params, global_map)
-                new_block.extend(process_stmt(s, target_func, original_params, global_map))
-            node.block_items = new_block
-
-    # Apply transformation to every compound block in the AST.
-    transform_calls(ast, func_name, original_params, global_map)
+    
     return ast
 
 def main():
