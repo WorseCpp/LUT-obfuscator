@@ -1,136 +1,211 @@
-from pycparser import c_parser, c_ast, c_generator
-import graphviz
+from CFG import *
+import os
+import subprocess
+import random
 
-class CFG:
-    def __init__(self):
-        self.dot = graphviz.Digraph(comment="Control Flow Graph (CFG)")
-        self.counter = 0
+name_dict = []
 
-    def new_node(self, label):
-        node_id = f"N{self.counter}"
-        self.counter += 1
-        self.dot.node(node_id, label)
-        return node_id
+def compile_c_code(source_file):
+    compile_command = ["gcc", "-O3", "-c", source_file]
+    result = subprocess.run(compile_command, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"Compilation failed: {result.stderr}")
+    else:
+        print(f"Compilation succeeded: {result.stdout}")
 
-    def add_edge(self, from_node, to_node):
-        self.dot.edge(from_node, to_node)
+def show_cfg(c_code):
+    
 
-def gen_code(node):
-    # Generate C code from a pycparser AST node for clearer labels.
+    parser = c_parser.CParser()
+    ast = parser.parse(c_code)
+
     generator = c_generator.CGenerator()
-    return generator.visit(node)
+    print("Generated code;\n", generator.visit(ast))
+    
+    cfg = CFG()
+    
+    # Process each function definition in the AST.
+    for ext in ast.ext:
+        if isinstance(ext, c_ast.FuncDef):
+            build_cfg_from_func(ext, cfg)
+    
+    # Render and view the CFG as a PNG image.
+    cfg.dot.render("c_cfg", format="png", view=True)
 
-def process_statement(stmt, cfg):
-    # Return a tuple (entry_node, list_of_exit_nodes) for the statement.
-    if isinstance(stmt, c_ast.Compound):
-        return process_compound(stmt, cfg)
-    elif isinstance(stmt, c_ast.If):
-        return process_if(stmt, cfg)
-    elif isinstance(stmt, c_ast.While):
-        return process_while(stmt, cfg)
-    elif isinstance(stmt, c_ast.For):
-        return process_for(stmt, cfg)
-    elif isinstance(stmt, c_ast.Return):
-        label = "return " + (gen_code(stmt.expr) if stmt.expr else "")
-        node = cfg.new_node(label)
-        return (node, [])
-    else:
-        # For simple statements (e.g. assignments, declarations), create a single node.
-        node = cfg.new_node(type(stmt).__name__)
-        return (node, [node])
+def show_cfg(ast):
+    cfg = CFG()
+    
+    # Process each function definition in the AST.
+    for ext in ast.ext:
+        if isinstance(ext, c_ast.FuncDef):
+            build_cfg_from_func(ext, cfg)
+    
+    # Render and view the CFG as a PNG image.
+    cfg.dot.render("c_cfg", format="png", view=True)
 
-def process_compound(compound, cfg):
-    # Process a compound statement (a block) sequentially.
-    entry = None
-    exits = []
-    if compound.block_items:
-        for stmt in compound.block_items:
-            stmt_entry, stmt_exits = process_statement(stmt, cfg)
-            if entry is None:
-                entry = stmt_entry
-            # Connect previous statement exits to the current statement entry.
-            for prev in exits:
-                cfg.add_edge(prev, stmt_entry)
-            exits = stmt_exits
-        return (entry, exits)
-    else:
-        # If the block is empty, create an empty node.
-        node = cfg.new_node("Empty")
-        return (node, [node])
+def rand_name():
+    choice = random.choice(name_dict)
+    name_dict.remove(choice)
+    return choice
 
-def process_if(if_node, cfg):
-    # Create a decision node based on the if-statement condition.
-    cond_str = "if(" + gen_code(if_node.cond) + ")"
-    decision = cfg.new_node(cond_str)
-    
-    # Process the 'true' branch.
-    if if_node.iftrue:
-        true_entry, true_exits = process_statement(if_node.iftrue, cfg)
-        cfg.add_edge(decision, true_entry)
-    else:
-        true_exits = [decision]
-    
-    # Process the 'false' branch if present.
-    if if_node.iffalse:
-        false_entry, false_exits = process_statement(if_node.iffalse, cfg)
-        cfg.add_edge(decision, false_entry)
-    else:
-        false_exits = [decision]
-    
-    # Create a join node to merge the two branches.
-    join = cfg.new_node("join")
-    for node in true_exits + false_exits:
-        cfg.add_edge(node, join)
-    return (decision, [join])
+def add_noop_var_decl(fxn):
+    # Create a new variable declaration node
+    noop_var_name = rand_name()
 
-def process_while(while_node, cfg):
-    # Create a node for while condition.
-    cond_str = "while(" + gen_code(while_node.cond) + ")"
-    decision = cfg.new_node(cond_str)
-    
-    # Process the loop body.
-    if while_node.stmt:
-        body_entry, body_exits = process_statement(while_node.stmt, cfg)
-        cfg.add_edge(decision, body_entry)
-        # Loop back from body exits to condition.
-        for node in body_exits:
-            cfg.add_edge(node, decision)
-    
-    # Create an exit node representing exiting the while loop.
-    exit_node = cfg.new_node("exit while")
-    cfg.add_edge(decision, exit_node)
-    return (decision, [exit_node])
+    new_var_decl = c_ast.Decl(
+        name="",
+        quals=[],
+        storage=[],
+        funcspec=[],
+        align=[],
+        type=c_ast.TypeDecl(
+            declname=noop_var_name,
+            type=c_ast.IdentifierType(names=["int"]),
+            quals=[],
+            align=[]
+        ),
+        init=c_ast.Constant(type="int", value=str(random.randint(-2**16, 2**16))),
+        bitsize=None
+    )
 
-def process_for(for_node, cfg):
-    # For simplicity, process a for-loop much like a while loop.
-    init_str = gen_code(for_node.init) if for_node.init else ""
-    cond_str = gen_code(for_node.cond) if for_node.cond else ""
-    next_str = gen_code(for_node.next) if for_node.next else ""
-    header = f"for({init_str}; {cond_str}; {next_str})"
-    decision = cfg.new_node(header)
-    
-    # Process the loop body.
-    if for_node.stmt:
-        body_entry, body_exits = process_statement(for_node.stmt, cfg)
-        cfg.add_edge(decision, body_entry)
-        for node in body_exits:
-            cfg.add_edge(node, decision)
-    
-    exit_node = cfg.new_node("exit for")
-    cfg.add_edge(decision, exit_node)
-    return (decision, [exit_node])
+    # Insert the new variable declaration at the beginning of the function body
+    fxn.body.block_items.insert(0, new_var_decl)
+    return fxn, noop_var_name
 
-def build_cfg_from_func(func_def, cfg):
-    # Build the CFG for a function definition.
-    entry = cfg.new_node("Function: " + func_def.decl.name)
-    body_entry, body_exits = process_statement(func_def.body, cfg)
-    cfg.add_edge(entry, body_entry)
-    end_node = cfg.new_node("End of " + func_def.decl.name)
-    for node in body_exits:
-        cfg.add_edge(node, end_node)
-    return entry
+def add_goto_delete_while(fxn):
+
+    # Create a unique label name
+    label_name = rand_name()
+    for i, stmt in enumerate(fxn.body.block_items):
+        if isinstance(stmt, c_ast.While):
+
+            # Create the label node
+            label = c_ast.Label(name=label_name, stmt=c_ast.Compound(block_items=[]))
+
+            # Create the goto statement node
+            goto_stmt = c_ast.Goto(name=label_name)
+
+            # Add the label at the position of the while loop
+            fxn.body.block_items[i] = label
+
+            # Add the while loop body to the label's block items
+            label.stmt.block_items.extend(stmt.stmt.block_items)
+
+            # Add the condition check and goto statement at the end of the label's block items
+            label.stmt.block_items.append(c_ast.If(
+                cond=stmt.cond,
+                iftrue=goto_stmt,
+                iffalse=None
+            ))
+
+            break
+    return fxn, label_name
+
+
+operations = ['+', '-', '*', '/', '%', '|', '||', '&', '&&']
+
+
+def make_dummy_statements(dummy_vars):
+    dummy_statements = []
+    
+    for var in dummy_vars:
+        op = random.choice(operations)
+        value = random.randint(1, 10)
+        dummy_statements.append(
+            c_ast.Assignment(
+                op=op,
+                lvalue=c_ast.ID(name=var),
+                rvalue=c_ast.Constant(type="int", value=str(value))
+            )
+        )
+    
+
+    node = c_ast.Assignment(
+                        op=random.choice(operations) + "=",
+                        lvalue=c_ast.ID(name=random.choice(dummy_vars)),
+                        rvalue=dummy_vars
+                    )
+
+    return dummy_statements
+
+def add_dead_code(fxn, dummy_vars):
+    # Create a new counter variable declaration node
+    counter_var_name = rand_name()
+
+    # Find a random position in the function body to insert the loop
+    insert_position = random.randint(0, len(fxn.body.block_items))
+
+    new_var_decl = c_ast.Decl(
+        name="",
+        quals=[],
+        storage=[],
+        funcspec=[],
+        align=[],
+        type=c_ast.TypeDecl(
+            declname=counter_var_name,
+            type=c_ast.IdentifierType(names=["int"]),
+            quals=[],
+            align=[]
+        ),
+        init=c_ast.Constant(type="int", value="0"),
+        bitsize=None
+    )
+
+    # Create a new for loop node
+    loop_var_name = rand_name()
+    new_for_loop = c_ast.For(
+        init=c_ast.DeclList(
+            decls=[c_ast.Decl(
+                name="",
+                quals=[],
+                storage=[],
+                funcspec=[],
+                align=[],
+                type=c_ast.TypeDecl(
+                    declname=loop_var_name,
+                    type=c_ast.IdentifierType(names=["int"]),
+                    quals=[],
+                    align=[]
+                ),
+                init=c_ast.Constant(type="int", value="0"),
+                bitsize=None
+            )]
+        ),
+        cond=c_ast.BinaryOp(
+            op="<",
+            left=c_ast.ID(name=loop_var_name),
+            right=c_ast.Constant(type="int", value=str(random.randint(2, 5)))
+        ),
+        next=c_ast.UnaryOp(
+            op="++",
+            expr=c_ast.ID(name=loop_var_name)
+        ),
+        stmt=c_ast.Compound(
+            block_items=[
+                
+                c_ast.Assignment(
+                    op=random.choice(operations) + "=",
+                    lvalue=c_ast.ID(name=counter_var_name),
+                    rvalue=dummy
+                )
+
+                for dummy in make_dummy_statements(dummy_vars + [loop_var_name, counter_var_name])
+            ]
+        )
+    )
+
+    # Insert the new variable declaration and for loop at the beginning of the function body
+    fxn.body.block_items.insert(-1, new_for_loop)
+    fxn.body.block_items.insert(0, new_var_decl)
+    return fxn, counter_var_name
 
 def main():
+
+    global name_dict
+    name_dict = open("../words_alpha.txt", 'r').read().split("\n")
+
+    name_dict = [i for i in name_dict if len(i) > 2]
+
     # Example C code including control flow constructs.
     c_code = r'''
 
@@ -140,8 +215,9 @@ def main():
     }
 
     int main() {
-        int a = 0;
+
         int i = 0;
+        int a = 0;
         if (a < 10) {
             a = a + 1;
         } else {
@@ -154,18 +230,22 @@ def main():
         return a;
     }
     '''
+
+    #open("test.c","w+").write(c_code)
+    #compile_c_code("test.c")
+    #file_size = os.path.getsize('test.o')
+    #print(f"Compiled file size: {file_size} bytes")
+
     parser = c_parser.CParser()
     ast = parser.parse(c_code)
-    
-    cfg = CFG()
-    
-    # Process each function definition in the AST.
-    for ext in ast.ext:
-        if isinstance(ext, c_ast.FuncDef):
-            build_cfg_from_func(ext, cfg)
-    
-    # Render and view the CFG as a PNG image.
-    cfg.dot.render("c_cfg", format="png", view=True)
+    ast.ext[1], dummy1 = add_noop_var_decl(ast.ext[1])
+    ast.ext[1], dummy2 = add_noop_var_decl(ast.ext[1])
+    ast.ext[1], dummy3 = add_noop_var_decl(ast.ext[1])
+    ast.ext[1], dummy4 = add_noop_var_decl(ast.ext[1])
+    ast.ext[1], _ = add_dead_code(ast.ext[1], [dummy1, dummy2, dummy3, dummy4])
+
+    generator = c_generator.CGenerator()
+    print("Generated code;\n", generator.visit(ast))
 
 if __name__ == "__main__":
     main()

@@ -5,21 +5,21 @@ digraph {
 	N0 -> N1
 	N2 [label="End of f"]
 	N3 [label="Function: main"]
-	N4 [label=Decl]
-	N5 [label=Decl]
+	N4 [label="int a = 0"]
+	N5 [label="int i = 0"]
 	N4 -> N5
 	N6 [label="if(a < 10)"]
-	N7 [label=Assignment]
+	N7 [label="a = a + 1"]
 	N6 -> N7
-	N8 [label=Assignment]
+	N8 [label="a = a - 1"]
 	N6 -> N8
 	N9 [label=join]
 	N7 -> N9
 	N8 -> N9
 	N5 -> N6
 	N10 [label="while(a < 15)"]
-	N11 [label=UnaryOp]
-	N12 [label=Assignment]
+	N11 [label="a++"]
+	N12 [label="i += f(a)"]
 	N11 -> N12
 	N10 -> N11
 	N12 -> N10
