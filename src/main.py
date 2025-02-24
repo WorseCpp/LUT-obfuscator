@@ -2,17 +2,32 @@ from CFG import *
 import os
 import subprocess
 import random
+import copy
 
 name_dict = []
 
-def compile_c_code(code):
+def compile_c_code(code, v = True):
     open("code.c","w+").write(code)
     compile_command = ["gcc", "-O3", "-c", "code.c"]
     result = subprocess.run(compile_command, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"Compilation failed: {result.stderr}")
+        if (v):
+            print(f"Compilation failed: {result.stderr}")
+        return False
     else:
-        print(f"Compilation succeeded: {result.stdout}")
+        if v:
+            print(f"Compilation succeeded: {result.stdout}")
+        return True
+
+def compile_and_test(code):
+    if not compile_c_code(code, False):
+        return False
+    compile_command = ["gcc", "-O3", "-o", "out", "main.o", "code.o"]
+    subprocess.run(compile_command, capture_output=True, text=True)
+    test_cmd = ["./out"]
+    res = subprocess.run(test_cmd, capture_output=True, text=True)
+    return bool(res.returncode)
+
 
 def show_cfg(c_code):
     
@@ -205,35 +220,51 @@ def add_global(ast, typ='int'):
     ast.ext.insert(0, new_global_var_decl)
     return ast, global_var_name
 
-def make_local_global(ast):
-    functions = [node for node in ast.ext if isinstance(node, c_ast.FuncDef)]
-    if not functions:
-        return ast
-    chosen_func = random.choice(functions)
-    if not chosen_func.body or not chosen_func.body.block_items:
-        return ast
-    local_decls = [stmt for stmt in chosen_func.body.block_items if isinstance(stmt, c_ast.Decl)]
-    if not local_decls:
-        return ast
-    chosen_decl = random.choice(local_decls)
-    chosen_decl.quals = ["static"]
-    chosen_func.body.block_items.remove(chosen_decl)
-    ast.ext.insert(0, chosen_decl)
+
+def globalize(ast):
+    new_globals = []
+
+    def extract_decls(compound):
+        if not hasattr(compound, "block_items") or compound.block_items is None:
+            return
+        retained = []
+        for item in compound.block_items:
+            # If the item is a local variable declaration (skip function declarations)
+            if isinstance(item, c_ast.Decl) and not isinstance(item.type, c_ast.FuncDecl):
+                new_globals.append(item)
+            else:
+                retained.append(item)
+                # Recursively check any nested compound statement
+                if hasattr(item, "block_items") and item.block_items:
+                    extract_decls(item)
+                else:
+                    for _, child in item.children():
+                        if isinstance(child, c_ast.Compound):
+                            extract_decls(child)
+        compound.block_items = retained
+
+    # Process each function definition's body
+    ext = random.choice(ast.ext)
+    if isinstance(ext, c_ast.FuncDef):
+        extract_decls(ext.body)
+
+    # Prepend the extracted local declarations as globals
+    ast.ext = new_globals + ast.ext
 
     return ast
 
 
-def noarg(ast, globals):
-
+def noarg(ast):
     # Pick a random function that has parameters.
     func_defs = [node for node in ast.ext if isinstance(node, c_ast.FuncDef) and node.decl.type.args and node.decl.type.args.params]
     
     if not func_defs:
         return ast
-
     chosen_fx = random.choice(func_defs)
+    
     func_name = chosen_fx.decl.name
     params = chosen_fx.decl.type.args.params
+
 
     # Gather existing globals (non-function declarations) from the AST.
     existing_globals = [d for d in ast.ext if isinstance(d, c_ast.Decl) and not isinstance(d, c_ast.FuncDef)]
@@ -244,40 +275,25 @@ def noarg(ast, globals):
             return " ".join(decl.type.type.names)
         return ""
 
-    # For each parameter, see if a global of the same type exists.
     for param in params:
-        param_type = get_type_str(param)
-        if not param_type:
-            continue
-        found = None
-        for g in existing_globals:
-            if get_type_str(g) == param_type:
-                # Use the global variable's declared name.
-                if isinstance(g.type, c_ast.TypeDecl):
-                    found = g.type.declname
-                break
-        if found:
-            global_map[param.name] = found
-        else:
-            # Create a new global variable using the parameter name.
-            new_global = c_ast.Decl(
-                name="",
-                quals=['static'],
-                storage=[],
-                funcspec=[],
-                align=[],
-                type=c_ast.TypeDecl(
-                    declname=param.name,
-                    type=param.type.type,
-                    quals=[],
-                    align=[]
-                ),
-                init=None,
-                bitsize=None
-            )
-            ast.ext.insert(0, new_global)
-            global_map[param.name] = param.name
-            existing_globals.append(new_global)
+        typ = get_type_str(param)
+        new_global_decl = c_ast.Decl(
+            name="",
+            quals=[],
+            storage=[],
+            funcspec=[],
+            align=[],
+            type=c_ast.TypeDecl(
+                declname=param.name,
+                type=c_ast.IdentifierType(names=[typ]),
+                quals=[],
+                align=[]
+            ),
+            init=c_ast.Constant(type=typ, value="0"),
+            bitsize=None
+        )
+        ast.ext.insert(0, new_global_decl)
+        global_map[param.name] = param.name
 
     # Fully traverse the AST using an iterative loop.
     nodes_to_visit = [(ast, None, 0)]
@@ -286,10 +302,10 @@ def noarg(ast, globals):
         # Example processing: if current node is a function call, print it along with the last parent
         if isinstance(current_node, c_ast.FuncCall):
             if current_node.args and isinstance(current_node.args, c_ast.ExprList):
-                for arg in current_node.args.exprs:
+                for i, arg in enumerate(current_node.args.exprs):
                     assign_stmt = c_ast.Assignment(
                         op="=",
-                        lvalue=c_ast.ID(name="x"),
+                        lvalue=c_ast.ID(name=params[i].name),
                         rvalue=arg
                     )
 
@@ -336,6 +352,9 @@ def transplant_block(ast):
     if not fxn.body or not fxn.body.block_items:
         return ast
     
+    if (len(fxn.body.block_items) < 3):
+        return ast;
+
     block_begin = random.randint(0, len(fxn.body.block_items) - 2)
     block_end = random.randint(block_begin, len(fxn.body.block_items) - 1)
     target_block = fxn.body.block_items[block_begin:block_end]
@@ -366,10 +385,105 @@ def transplant_block(ast):
     fxn.body.block_items = [goto_to_target, after_label] + [target_label];
     return ast
 
+def uniquefy(ast):
+    counter = 1
 
+    def new_name():
+        nonlocal counter
+        name = f"var_{counter}"
+        counter += 1
+        return name
+
+    def visit(node, env):
+        # If node introduces a new block scope, push a new scope map.
+        if isinstance(node, c_ast.Compound):
+            env.append({})
+            if getattr(node, "block_items", None):
+                for child in node.block_items:
+                    visit(child, env)
+            env.pop()
+        # Process local variable declarations.
+        elif isinstance(node, c_ast.Decl) and getattr(node, "name", None):
+            old_name = node.name
+            unique = new_name()
+            node.name = unique
+            if hasattr(node.type, "declname"):
+                node.type.declname = unique
+            env[-1][old_name] = unique
+            for _, child in node.children():
+                visit(child, env)
+        # Update identifiers using the current environment stack.
+        elif isinstance(node, c_ast.ID):
+            for scope in reversed(env):
+                if node.name in scope:
+                    node.name = scope[node.name]
+                    break
+        else:
+            for _, child in node.children():
+                visit(child, env)
+
+    for ext in ast.ext:
+        if isinstance(ext, c_ast.FuncDef):
+            # Set up a scope for function parameters.
+            env = [{}]
+            if ext.decl.type.args and ext.decl.type.args.params:
+                for param in ext.decl.type.args.params:
+                    if getattr(param, "name", None):
+                        old_name = param.name
+                        unique = new_name()
+                        param.name = unique
+                        if hasattr(param.type, "declname"):
+                            param.type.declname = unique
+                        env[0][old_name] = unique
+            visit(ext.body, env)
+    return ast
+
+def rm_global(ast):
+    # Gather global declarations (non-function declarations)
+    globals_list = [g for g in ast.ext if isinstance(g, c_ast.Decl) and not isinstance(g, c_ast.FuncDef)]
+    if len(globals_list) < 2:
+        return ast
+
+    # Select a global randomly to remove
+    removed_global = random.choice(globals_list)
+
+    # Helper to extract type string from a declaration
+    def get_type_str(decl):
+        try:
+            return " ".join(decl.type.type.names)
+        except AttributeError:
+            return ""
+
+    removed_type = get_type_str(removed_global)
+
+    # Find other globals of the same type
+    candidate_globals = [g for g in globals_list if g is not removed_global and get_type_str(g) == removed_type]
+    if not candidate_globals:
+        return ast
+
+    replacement_global = random.choice(candidate_globals)
+
+    # Determine variable names to replace
+    removed_name = removed_global.type.declname if hasattr(removed_global.type, "declname") else removed_global.name
+    replacement_name = replacement_global.type.declname if hasattr(replacement_global.type, "declname") else replacement_global.name
+
+    # Remove the chosen global from the list of globals
+    ast.ext.remove(removed_global)
+
+    # Traverse the AST and replace identifiers
+    def replace_identifiers(node):
+        if isinstance(node, c_ast.ID) and node.name == removed_name:
+            node.name = replacement_name
+        for _, child in node.children():
+            replace_identifiers(child)
+
+    for node in ast.ext:
+        replace_identifiers(node)
+
+    return ast
 
 def main():
-    random.seed(1)
+    #random.seed(1)
 
     global name_dict
     name_dict = open("../words_alpha.txt", 'r').read().split("\n")
@@ -378,39 +492,47 @@ def main():
     # Example C code including control flow constructs.
     c_code = r'''
 
-    int g(int x)
-    {
-        float i = 0;
-        i = x * x;
-        i *= i;
-        return i*8;
-    }
+        int fib(int i) {
+            int a = 1;
+            int b = 1;
+            int c = a + b;
 
-    int f(int x)
-    {
-        return x * x * x * x;
-    }
+            if (i == 0 | i == 1)
+            {
+            return 1;
+            }
 
-    int main() {
+            if (i >= 20)
+            {
+                return -1;
+            }
 
-        int i = 0;
-        int a = 0;
-        int j = 0;
-        j = f(10);
-        if (a < 10) {
-            a = a + 1;
-        } else {
-            a = a - 1;
+            for (int j = 0; j < i - 2; j++)
+            {
+                a = b;
+                b = c;
+                c = a + b;
+            }    
+            return c;
         }
-        while (a < 15) {
-            a++;
-            i += f(a);
+
+        float sqr(float x)
+        {
+            return x*x;    
         }
-        return a;
-    }
+
+        float ring(float x)
+        {
+            float ctr = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                ctr = sqr(ctr + x);
+            }
+            return ctr;
+        }
     '''
 
-    compile_c_code(c_code)
+    print(compile_and_test(c_code))
 
     #open("test.c","w+").write(c_code)
     #compile_c_code("test.c")
@@ -419,24 +541,38 @@ def main():
 
     parser = c_parser.CParser()
     ast = parser.parse(c_code)
-    ast, glob1 = add_global(ast, typ = 'float')
-    # ast = noarg(ast, [])
-    # ast = uniqueify_locals(ast)
-    ast = make_local_global(ast)
-    ast = make_local_global(ast)
-    ast = make_local_global(ast)
-    ast = make_local_global(ast)
-    ast = make_local_global(ast)
-
-
-
-    ast = transplant_block(ast)
-    
+    # clean AST
+    ast = uniquefy(ast) # unique variable names
 
     generator = c_generator.CGenerator()
-    print("Generated code;\n", generator.visit(ast))
 
-    compile_c_code(generator.visit(ast))
+    for i in range(100):
+        a = random.randint(0, 3)
+        old_ast = copy.deepcopy(ast)
+        new_ast = None
+        if (a < 1):
+            new_ast = globalize(ast) # ONLY globals
+        elif (a < 2):
+            new_ast = noarg(ast) #No argument passing :D
+        elif (a < 3):
+            new_ast = ast
+            ch = random.randint(0, len(new_ast.ext)-1)
+            new_ast.ext[ch] = add_dead_code(new_ast.ext[ch], ())
+        else:
+            new_ast = rm_global(ast)
+
+        if (compile_and_test(generator.visit(new_ast))):
+            # print("swap")
+            ast = new_ast
+            assert(compile_and_test(generator.visit(ast)))
+        else:
+            ast = old_ast
+
+
+    code = generator.visit(ast)
+    print("Generated code;\n", code)
+
+    print(compile_c_code(code), compile_and_test(code))
 
 if __name__ == "__main__":
     main()
