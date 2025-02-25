@@ -1,42 +1,67 @@
-int var_1 = 0;
-float var_6 = 0;
-float var_8 = 0;
-int fib()
+int fib(int i)
 {
-  int var_2 = 1;
-  int var_3 = 1;
-  int var_4 = var_2 + var_3;
-  if ((var_1 == 0) | (var_1 == 1))
+  int a = 1;
+  int b = 1;
+  int c = a + b;
+  if ((i == 0) | (i == 1))
   {
     return 1;
   }
-  if (var_1 >= 20)
+  if (i >= 20)
   {
     return -1;
   }
-  for (int var_5 = 0; var_5 < (var_1 - 2); var_5++)
+  int j = 0;
+  scrapy:
   {
-    var_2 = var_3;
-    var_3 = var_4;
-    var_4 = var_2 + var_3;
+    if (j < (i - 2))
+    {
+    }
+    else
+    {
+      goto kempite;
+    }
   }
 
-  return var_4;
-}
-
-float sqr()
-{
-  return var_6 * var_6;
-}
-
-float ring(float var_7)
-{
-  for (int var_9 = 0; var_9 < 3; var_9++)
+  a = b;
+  b = c;
+  c = a + b;
+  j++;
+  goto scrapy;
+  kempite:
   {
-    var_6 = var_8 + var_7;
-    var_8 = sqr();
   }
 
-  return var_8;
+  return c;
+}
+
+float sqr(float x)
+{
+  return x * x;
+}
+
+float ring(float x)
+{
+  float ctr = 0;
+  int i = 0;
+  impersonize:
+  {
+    if (i < 3)
+    {
+    }
+    else
+    {
+      goto filator;
+    }
+  }
+
+  ctr = sqr(ctr + x);
+  i++;
+  goto impersonize;
+  filator:
+  {
+  }
+
+  return ctr;
 }
 

@@ -26,7 +26,7 @@ int main()
 {
     for (int i =0; i < 10; i++)
     {
-        //printf("%i ", fib(i));
+        printf("%i ", fib(i));
         if (fib(i) != dat[i] | m_sqr(i) != sqr(i) | m_ring(i) != ring(i))
         {
             return 0;
