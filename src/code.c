@@ -1,67 +1,39 @@
-int fib(int i)
+void swap(int *a, int *b)
 {
-  int a = 1;
-  int b = 1;
-  int c = a + b;
-  if ((i == 0) | (i == 1))
-  {
-    return 1;
-  }
-  if (i >= 20)
-  {
-    return -1;
-  }
-  int j = 0;
-  scrapy:
-  {
-    if (j < (i - 2))
-    {
-    }
-    else
-    {
-      goto kempite;
-    }
-  }
-
-  a = b;
-  b = c;
-  c = a + b;
-  j++;
-  goto scrapy;
-  kempite:
-  {
-  }
-
-  return c;
+  int temp = *a;
+  *a = *b;
+  *b = temp;
 }
 
-float sqr(float x)
+int partition(int arr[], int low, int high)
 {
-  return x * x;
+  int pivot = arr[high];
+  int i = low - 1;
+  for (int j = low; j <= (high - 1); j++)
+  {
+    if (arr[j] <= pivot)
+    {
+      i++;
+      swap(&arr[i], &arr[j]);
+    }
+  }
+
+  swap(&arr[i + 1], &arr[high]);
+  return i + 1;
 }
 
-float ring(float x)
+void quickSort(int arr[], int low, int high)
 {
-  float ctr = 0;
-  int i = 0;
-  impersonize:
+  if (low < high)
   {
-    if (i < 3)
-    {
-    }
-    else
-    {
-      goto filator;
-    }
+    int pi = partition(arr, low, high);
+    quickSort(arr, low, pi - 1);
+    quickSort(arr, pi + 1, high);
   }
-
-  ctr = sqr(ctr + x);
-  i++;
-  goto impersonize;
-  filator:
+  goto myoporaceous;
+  myoporaceous:
   {
   }
 
-  return ctr;
 }
 

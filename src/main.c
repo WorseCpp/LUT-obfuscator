@@ -1,36 +1,33 @@
 #include "stdio.h"
 
 
-int fib(int i);
-float sqr(float x);
-float ring(float x);
+void quickSort(int arr[], int low, int high);
 
-int dat[10] = {1, 1, 2, 3, 5, 8, 13, 21, 34, 55};
-
-float m_sqr(float x)
-{
-    return x*x;    
-}
-
-float m_ring(float x)
-{
-    float ctr = 0;
-    for (int i = 0; i < 3; i++)
-    {
-        ctr = m_sqr(ctr + x);
-    }
-    return ctr;
-}
+#define len 15
 
 int main()
 {
-    for (int i =0; i < 10; i++)
+    int m_arr[len];
+
+    for (int i = 0; i < 10; i++)
     {
-        printf("%i ", fib(i));
-        if (fib(i) != dat[i] | m_sqr(i) != sqr(i) | m_ring(i) != ring(i))
+
+        for(int j = 0; j < len; j++)
         {
-            return 0;
+            m_arr[j] = rand();
         }
+
+        quickSort(m_arr, 0, len-1);
+
+        for(int j = 0; j < len-1; j++)
+        {
+            if (m_arr[j] > m_arr[j+1])
+            {
+                return 0;
+            } 
+        }
+
     }
+
     return 1;
 }
