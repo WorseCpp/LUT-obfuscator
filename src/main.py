@@ -323,6 +323,8 @@ def globalize_local(ast):
     
     return ast
 
+
+
 def MC_mutate(ast, itr = 100):
 
     ast = unique_locals(ast)
@@ -409,12 +411,13 @@ def main():
         }
     '''
 
-
     pp = pcpp.Preprocessor()
     pp.parse(c_code)
     output = StringIO()
     pp.write(output)
     c_code = output.getvalue()
+
+    print(c_code)
 
     print(compile_and_test(c_code))
 
