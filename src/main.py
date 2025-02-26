@@ -174,12 +174,64 @@ def goto_if_stmt(ast):
 
     false_label_name = rand_name()
 
-    goto_true = c_ast.Goto()
+    end_label_name = rand_name()
 
-    goto_true = c_ast.Goto()
+    i = selected_func.body.block_items.index(if_stmt)
 
-    
+    goto_true = c_ast.Goto(name=true_label_name)
 
+    goto_false = c_ast.Goto(name=false_label_name)
+
+    goto_end = c_ast.Goto(name=end_label_name)
+
+    new_if = c_ast.If(
+        cond=if_stmt.cond,
+        iftrue= c_ast.Compound(block_items=[goto_true]),
+        iffalse=c_ast.Compound(block_items=[goto_false])
+    )
+
+    true_label = c_ast.Label(
+        name=true_label_name,
+        stmt=c_ast.Compound(block_items=[])
+    )
+
+    true_bloc = [true_label, if_stmt.iftrue, goto_end] if if_stmt.iftrue else [true_label, goto_end]
+
+    false_label = c_ast.Label(
+        name=false_label_name,
+        stmt=c_ast.Compound(block_items=[])
+    )
+
+    false_bloc = [false_label, if_stmt.iffalse] if if_stmt.iffalse else [false_label]
+
+    def unpack_bloc(bloc):
+        new_bloc = []
+        for stmt in bloc:
+            if isinstance(stmt, c_ast.Compound) and stmt.block_items is not None:
+                new_bloc += (stmt.block_items)
+            else:
+                new_bloc.append(stmt)
+        return new_bloc
+
+    true_bloc = unpack_bloc(true_bloc)
+    false_bloc = unpack_bloc(false_bloc)
+
+    end_label = c_ast.Label(
+        name = end_label_name,
+        stmt = c_ast.Compound(block_items=[])
+    )
+
+    selected_func.body.block_items[i] = new_if
+
+    for stmt in ((true_bloc)):
+        selected_func.body.block_items.insert(i + 1, stmt)
+        i += 1
+
+    for stmt in ((false_bloc)):
+        selected_func.body.block_items.insert(i + 1, stmt)
+        i += 1
+
+    selected_func.body.block_items.insert(i + 1, end_label)
     
     return ast
 
@@ -271,7 +323,7 @@ def globalize_local(ast):
     
     return ast
 
-def MC_mutate(ast, itr = 10):
+def MC_mutate(ast, itr = 100):
 
     ast = unique_locals(ast)
 
@@ -283,8 +335,10 @@ def MC_mutate(ast, itr = 10):
         old_ast = copy.deepcopy(ast)
         mode = random.randint(0, 100)
         
-        if (mode < 100):
+        if (mode < 50):
             globalize_local(ast)
+        else:
+            ast = goto_if_stmt(ast)
         
         generator = c_generator.CGenerator()
 
@@ -297,7 +351,7 @@ def MC_mutate(ast, itr = 10):
 
 
 def main():
-    random.seed(5)
+    random.seed(8)
 
     global name_dict
     name_dict = open("../words_alpha.txt", 'r').read().split("\n")
@@ -372,9 +426,9 @@ def main():
     parser = c_parser.CParser()
     ast = parser.parse(c_code)
 
-    #ast = MC_mutate(ast)
-
-    ast = goto_if_stmt(ast)
+    ast = MC_mutate(ast)
+    # ast.ext[1],_ = add_goto_delete_for(ast.ext[1])
+    # ast = goto_if_stmt(ast)
 
     generator = c_generator.CGenerator()
 
