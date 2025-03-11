@@ -235,6 +235,7 @@ def goto_if_stmt(ast):
     
     return ast
 
+
 class FunctionRenamer(c_ast.NodeVisitor):
     def __init__(self):
         self.counter = 1
@@ -323,9 +324,44 @@ def globalize_local(ast):
     
     return ast
 
+def delete_global(ast):
+    # Collect global variable declarations (exclude function definitions)
+    global_decls = [node for node in ast.ext if isinstance(node, c_ast.Decl) and not isinstance(node.type, c_ast.FuncDecl)]
+    if len(global_decls) < 2:
+        # Need at least two globals to perform replacement
+        return ast
 
+    # Randomly select a global variable to delete
+    candidate = random.choice(global_decls)
 
-def MC_mutate(ast, itr = 100):
+    # Use c_generator to get a string representation of its type
+    gen = c_generator.CGenerator()
+    candidate_type_str = gen.visit(candidate.type)
+
+    # Find replacement globals with the same type (excluding the candidate)
+    same_type_globals = [node for node in global_decls if node is not candidate and gen.visit(node.type) == candidate_type_str]
+    if not same_type_globals:
+        # No replacement found; do nothing
+        return ast
+
+    # Randomly choose a replacement global variable of the same type
+    replacement = random.choice(same_type_globals)
+    candidate_name = candidate.name
+    replacement_name = replacement.name
+
+    # Remove the candidate from the list of top-level declarations
+    ast.ext.remove(candidate)
+
+    # Traverse the AST and replace all references of candidate with replacement
+    class GlobalVarReplacer(c_ast.NodeVisitor):
+        def visit_ID(self, node):
+            if node.name == candidate_name:
+                node.name = replacement_name
+
+    GlobalVarReplacer().visit(ast)
+    return ast
+
+def MC_mutate(ast, itr = 25):
 
     ast = unique_locals(ast)
 
@@ -350,12 +386,53 @@ def MC_mutate(ast, itr = 100):
 
     return ast
 
+def opaquify(ast):
 
+    # Filter functions that have a body with statements.
+    valid_funcs = [f for f in ast.ext if hasattr(f, "body") and f.body and getattr(f.body, "block_items", None)]
+    if not valid_funcs:
+        return ast
+
+    # Select a random function.
+    selected_func = random.choice(valid_funcs)
+
+    # Filter statements in the function's body that are either an assignment or an if statement.
+    candidates = [stmt for stmt in selected_func.body.block_items
+                    if isinstance(stmt, (c_ast.Assignment, c_ast.If, c_ast.For, c_ast.While, c_ast.Decl))]
+    
+    if not candidates:
+        return ast
+
+    # Select a random statement from the candidates.
+    selected_stmt = random.choice(candidates)
+    print(selected_stmt)
+
+    to_be_opaquified = None
+
+    if isinstance(selected_stmt, c_ast.Decl):
+        gen = c_generator.CGenerator()
+        decl_type = gen.visit(selected_stmt.type)
+        if selected_stmt.init is not None:
+            to_be_opaquified = selected_stmt.init
+        else:
+            raise Exception("Declaration without initialization not supported")
+    elif isinstance(selected_stmt, (c_ast.If, c_ast.For, c_ast.While)):
+        to_be_opaquified = selected_stmt.cond
+    else:
+        to_be_opaquified = selected_stmt.rvalue
+
+    
+
+    return ast
 
 def main():
-    random.seed(8)
+
+    s = random.randbytes(5)
+    s = b'\x93e\x0c\xb9\xf3'
+    random.seed(s)
 
     global name_dict
+
     name_dict = open("../words_alpha.txt", 'r').read().split("\n")
     name_dict = [i for i in name_dict if len(i) > 2]
 
@@ -417,9 +494,9 @@ def main():
     pp.write(output)
     c_code = output.getvalue()
 
-    print(c_code)
+    #print(c_code)
 
-    print(compile_and_test(c_code))
+    #print(compile_and_test(c_code))
 
     #open("test.c","w+").write(c_code)
     #compile_c_code("test.c")
@@ -429,17 +506,23 @@ def main():
     parser = c_parser.CParser()
     ast = parser.parse(c_code)
 
-    ast = MC_mutate(ast)
+    ast = opaquify(ast)
+
+    # ast = MC_mutate(ast)
+    # ast = delete_global(ast)
+    
     # ast.ext[1],_ = add_goto_delete_for(ast.ext[1])
     # ast = goto_if_stmt(ast)
+
+
 
     generator = c_generator.CGenerator()
 
     code = generator.visit(ast)
-    print("Generated code;\n", code)
+    #print("Generated code;\n", code)
 
-    print(compile_c_code(code), compile_and_test(code))
-    show_cfg(ast)
+    #print(compile_c_code(code), compile_and_test(code))
+    #show_cfg(ast)
 
 if __name__ == "__main__":
     main()
