@@ -9,6 +9,8 @@ import z3
 import pcpp
 from io import StringIO
 
+from tqdm import tqdm
+
 name_dict = []
 
 def compile_c_code(code, v = True):
@@ -29,7 +31,9 @@ def compile_and_test(code):
     if not compile_c_code(code, False):
         return False
     compile_command = ["gcc", "-O3", "-o", "out", "main.o", "code.o"]
-    subprocess.run(compile_command, capture_output=True, text=True)
+    res = subprocess.run(compile_command, capture_output=True, text=True)
+    if res.returncode != 0:
+        return False
     test_cmd = ["./out"]
     res = subprocess.run(test_cmd, capture_output=True, text=True)
     return bool(res.returncode)
@@ -361,28 +365,42 @@ def delete_global(ast):
     GlobalVarReplacer().visit(ast)
     return ast
 
-def MC_mutate(ast, itr = 25):
+def create_binary_op(names, n):
+    if (len(names) < 2):
+        return c_ast.Constant(type="int", value="0")
 
-    ast = unique_locals(ast)
+    # loosely try to make a real issue
+    first = random.choice(names)
+    ctr = c_ast.BinaryOp(op = "*", left = first, right = first)
 
-    for i in range(len(ast.ext)):
-        ast.ext[i], _ = add_goto_delete_for(ast.ext[i])
-        ast.ext[i], _ = add_goto_delete_while(ast.ext[i])
+    for i in range(1, n):
+        ctr = c_ast.BinaryOp(op = "*", left = ctr, right = c_ast.BinaryOp(op = "+", left = first, right = c_ast.Constant(type="int", value=i)))
 
-    for i in range(itr):
-        old_ast = copy.deepcopy(ast)
-        mode = random.randint(0, 100)
-        
-        if (mode < 50):
-            globalize_local(ast)
-        else:
-            ast = goto_if_stmt(ast)
-        
-        generator = c_generator.CGenerator()
+    return c_ast.BinaryOp(op="%", left=ctr, right = c_ast.Constant(type="int", value=n))
 
-        code = generator.visit(ast)
-        if (not compile_and_test(code)):
-            ast = old_ast
+    
+def mutate_variable(ast):
+
+    # Collect global declarations that are not function definitions.
+    globals_decl = [node for node in ast.ext if isinstance(node, c_ast.Decl) and not isinstance(node.type, c_ast.FuncDecl)]
+    if not globals_decl:
+        return ast
+
+    # Randomly choose one global variable.
+    target = random.choice(globals_decl)
+
+    # Only proceed if the type is a TypeDecl.
+    if not isinstance(target.type, c_ast.TypeDecl):
+        return ast
+
+    # Get the current type names.
+    current_type = target.type.type.names
+
+    mutations = ["volatile", "extern", "unsigned", "long"]
+
+    mutation = random.choice(mutations)
+    if mutation not in target.type.type.names:
+        target.type.type.names.append(mutation)
 
     return ast
 
@@ -390,22 +408,26 @@ def opaquify(ast):
 
     # Filter functions that have a body with statements.
     valid_funcs = [f for f in ast.ext if hasattr(f, "body") and f.body and getattr(f.body, "block_items", None)]
+    
     if not valid_funcs:
         return ast
 
-    # Select a random function.
-    selected_func = random.choice(valid_funcs)
+    while valid_funcs:
+        # Select a random function.
+        selected_func = random.choice(valid_funcs)
 
-    # Filter statements in the function's body that are either an assignment or an if statement.
-    candidates = [stmt for stmt in selected_func.body.block_items
-                    if isinstance(stmt, (c_ast.Assignment, c_ast.If, c_ast.For, c_ast.While, c_ast.Decl))]
-    
-    if not candidates:
-        return ast
+        valid_funcs.remove(selected_func)
+
+        # Filter statements in the function's body that are either an assignment or an if statement.
+        candidates = [stmt for stmt in selected_func.body.block_items
+                        if isinstance(stmt, (c_ast.Assignment, c_ast.If, c_ast.For, c_ast.While, c_ast.Decl))]
+        
+        if not candidates and not valid_funcs:
+            return ast
 
     # Select a random statement from the candidates.
     selected_stmt = random.choice(candidates)
-    print(selected_stmt)
+#    print(selected_stmt)
 
     to_be_opaquified = None
 
@@ -421,7 +443,52 @@ def opaquify(ast):
     else:
         to_be_opaquified = selected_stmt.rvalue
 
-    
+
+    global_vars = [c_ast.ID(name=decl.name) for decl in ast.ext
+                   if isinstance(decl, c_ast.Decl) and not isinstance(decl.type, c_ast.FuncDecl)]
+    local_vars = [c_ast.ID(name=decl.name) for decl in selected_func.body.block_items
+                  if isinstance(decl, c_ast.Decl)]
+
+    # todo; generate these on-the-fly
+    opaque_expr = create_binary_op(global_vars + local_vars, random.randint(2, 5))
+
+    # print(selected_stmt,"\n", opaque_expr)
+    # print(selected_stmt, "\nOpq:\n", opaque_expr)
+    if isinstance(selected_stmt, c_ast.Decl):
+        selected_stmt.init = c_ast.BinaryOp(op = " + ", left = selected_stmt.init, right = opaque_expr)
+    elif isinstance(selected_stmt, (c_ast.If, c_ast.For, c_ast.While)):
+        selected_stmt.cond = c_ast.BinaryOp(op = " || ", left = selected_stmt.cond, right = opaque_expr)
+    else:
+        selected_stmt.rvalue = c_ast.BinaryOp(op = "+", left = selected_stmt.rvalue, right = opaque_expr)
+
+    return ast
+
+def MC_mutate(ast, itr = 250):
+
+    ast = unique_locals(ast)
+
+    for i in range(len(ast.ext)):
+        ast.ext[i], _ = add_goto_delete_for(ast.ext[i])
+        ast.ext[i], _ = add_goto_delete_while(ast.ext[i])
+
+    for i in tqdm(range(itr)):
+        old_ast = copy.deepcopy(ast)
+        mode = random.randint(0, 100)
+
+        if (mode < 25):
+            ast = globalize_local(ast)
+        elif (mode < 50):
+            ast = mutate_variable(ast)
+        elif (mode < 95):
+            ast = opaquify(ast)
+        else:
+            ast = goto_if_stmt(ast)
+        
+        generator = c_generator.CGenerator()
+
+        code = generator.visit(ast)
+        if (not compile_and_test(code)):
+            ast = old_ast
 
     return ast
 
@@ -506,9 +573,10 @@ def main():
     parser = c_parser.CParser()
     ast = parser.parse(c_code)
 
-    ast = opaquify(ast)
+    #ast = opaquify(ast)
 
-    # ast = MC_mutate(ast)
+    ast = MC_mutate(ast)
+
     # ast = delete_global(ast)
     
     # ast.ext[1],_ = add_goto_delete_for(ast.ext[1])
@@ -519,10 +587,10 @@ def main():
     generator = c_generator.CGenerator()
 
     code = generator.visit(ast)
-    #print("Generated code;\n", code)
+    print("Generated code;\n", code)
 
-    #print(compile_c_code(code), compile_and_test(code))
-    #show_cfg(ast)
+    print(compile_c_code(code), compile_and_test(code))
+    show_cfg(ast)
 
 if __name__ == "__main__":
     main()
