@@ -383,12 +383,21 @@ def mutate_variable(ast):
 
     # Collect global declarations that are not function definitions.
     globals_decl = [node for node in ast.ext if isinstance(node, c_ast.Decl) and not isinstance(node.type, c_ast.FuncDecl)]
-    if not globals_decl:
+
+    # Randomly choose one variable, either from globals or local variables in a function.
+    function_defs = [node for node in ast.ext if isinstance(node, c_ast.FuncDef)]
+    local_decls = []
+    if function_defs:
+        selected_func = random.choice(function_defs)
+        if selected_func.body and getattr(selected_func.body, "block_items", None):
+            local_decls = [stmt for stmt in selected_func.body.block_items if isinstance(stmt, c_ast.Decl)]
+    all_vars = globals_decl + local_decls
+    
+    if not all_vars:
         return ast
+    target = random.choice(all_vars)
 
-    # Randomly choose one global variable.
-    target = random.choice(globals_decl)
-
+    
     # Only proceed if the type is a TypeDecl.
     if not isinstance(target.type, c_ast.TypeDecl):
         return ast
@@ -419,15 +428,22 @@ def opaquify(ast):
         valid_funcs.remove(selected_func)
 
         # Filter statements in the function's body that are either an assignment or an if statement.
-        candidates = [stmt for stmt in selected_func.body.block_items
-                        if isinstance(stmt, (c_ast.Assignment, c_ast.If, c_ast.For, c_ast.While, c_ast.Decl))]
+        candidates = []
+
+        def collect_candidates(node):
+            if isinstance(node, (c_ast.Assignment, c_ast.If, c_ast.For, c_ast.While, c_ast.Decl, c_ast.BinaryOp)):
+                candidates.append(node)
+            for _, child in node.children():
+                collect_candidates(child)
+
+        for stmt in selected_func.body.block_items:
+            collect_candidates(stmt)
         
         if not candidates and not valid_funcs:
             return ast
 
     # Select a random statement from the candidates.
     selected_stmt = random.choice(candidates)
-#    print(selected_stmt)
 
     to_be_opaquified = None
 
@@ -440,6 +456,8 @@ def opaquify(ast):
             raise Exception("Declaration without initialization not supported")
     elif isinstance(selected_stmt, (c_ast.If, c_ast.For, c_ast.While)):
         to_be_opaquified = selected_stmt.cond
+    elif isinstance(selected_stmt, c_ast.BinaryOp):
+        to_be_opaquified = selected_stmt
     else:
         to_be_opaquified = selected_stmt.rvalue
 
@@ -458,6 +476,8 @@ def opaquify(ast):
         selected_stmt.init = c_ast.BinaryOp(op = " + ", left = selected_stmt.init, right = opaque_expr)
     elif isinstance(selected_stmt, (c_ast.If, c_ast.For, c_ast.While)):
         selected_stmt.cond = c_ast.BinaryOp(op = " || ", left = selected_stmt.cond, right = opaque_expr)
+    elif isinstance(selected_stmt, c_ast.BinaryOp):
+        selected_stmt = c_ast.BinaryOp(op = "+", left = selected_stmt, right = opaque_expr)
     else:
         selected_stmt.rvalue = c_ast.BinaryOp(op = "+", left = selected_stmt.rvalue, right = opaque_expr)
 
@@ -476,12 +496,15 @@ def MC_mutate(ast, itr = 250):
         mode = random.randint(0, 100)
 
         if (mode < 25):
+            # continue
             ast = globalize_local(ast)
-        elif (mode < 50):
+        elif (mode < 30):
             ast = mutate_variable(ast)
-        elif (mode < 95):
+        elif (mode < 97):
+            # continue
             ast = opaquify(ast)
         else:
+            # continue
             ast = goto_if_stmt(ast)
         
         generator = c_generator.CGenerator()
