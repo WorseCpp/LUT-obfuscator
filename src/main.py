@@ -1,7 +1,10 @@
-from CFG import *
-import os
-import subprocess
-import random
+
+from qol import *
+
+from preprocess import *
+
+from opaque_op import opaquify, remove_oqaque_clauses
+
 import copy
 
 import z3
@@ -10,147 +13,6 @@ import pcpp
 from io import StringIO
 
 from tqdm import tqdm
-
-name_dict = []
-
-def compile_c_code(code, v = True):
-
-    open("code.c","w+").write(code)
-    compile_command = ["gcc", "-O3", "-c", "code.c"]
-    result = subprocess.run(compile_command, capture_output=True, text=True)
-    if result.returncode != 0:
-        if (v):
-            print(f"Compilation failed: {result.stderr}")
-        return False
-    else:
-        if v:
-            print(f"Compilation succeeded: {result.stdout}")
-        return True
-
-def compile_and_test(code):
-    if not compile_c_code(code, False):
-        return False
-    compile_command = ["gcc", "-O3", "-o", "out", "main.o", "code.o"]
-    res = subprocess.run(compile_command, capture_output=True, text=True)
-    if res.returncode != 0:
-        return False
-    test_cmd = ["./out"]
-    res = subprocess.run(test_cmd, capture_output=True, text=True)
-    return bool(res.returncode)
-
-
-def show_cfg(c_code):
-    parser = c_parser.CParser()
-    ast = parser.parse(c_code)
-
-    generator = c_generator.CGenerator()
-    print("Generated code;\n", generator.visit(ast))
-    
-    cfg = CFG()
-    
-    # Process each function definition in the AST.
-    for ext in ast.ext:
-        if isinstance(ext, c_ast.FuncDef):
-            build_cfg_from_func(ext, cfg)
-    
-    # Render and view the CFG as a PNG image.
-    cfg.dot.render("c_cfg", format="png", view=True)
-
-def show_cfg(ast):
-    cfg = CFG()
-    
-    # Process each function definition in the AST.
-    for ext in ast.ext:
-        if isinstance(ext, c_ast.FuncDef):
-            build_cfg_from_func(ext, cfg)
-    
-    # Render and view the CFG as a PNG image.
-    cfg.dot.render("c_cfg", format="png", view=True)
-
-def rand_name():
-    choice = random.choice(name_dict)
-    name_dict.remove(choice)
-    return choice
-
-def add_goto_delete_while(fxn):
-
-    # Create a unique label name
-    label_name = rand_name()
-
-    for i, stmt in enumerate(fxn.body.block_items):
-        if isinstance(stmt, c_ast.While):
-
-            # Create the label node
-            label = c_ast.Label(name=label_name, stmt=c_ast.Compound(block_items=[]))
-
-            # Create the goto statement node
-            goto_stmt = c_ast.Goto(name=label_name)
-
-            # Add the label at the position of the while loop
-            fxn.body.block_items[i] = label
-
-            # Add the while loop body to the label's block items
-            label.stmt.block_items.extend(stmt.stmt.block_items)
-
-            # Add the condition check and goto statement at the end of the label's block items
-            label.stmt.block_items.append(c_ast.If(
-                cond=stmt.cond,
-                iftrue=goto_stmt,
-                iffalse=None
-            ))
-
-            break
-    return fxn, label_name
-
-def add_goto_delete_for(fxn):
-
-    # Create a unique label name
-    label_name = rand_name()
-    end_label_name = rand_name()
-    for i, stmt in enumerate(fxn.body.block_items):
-        if isinstance(stmt, c_ast.For):
-            # If an initialization exists, insert it before the loop
-            if stmt.init is not None:
-                for decl in stmt.init:
-                    fxn.body.block_items.insert(i, decl)
-                    i += 1  # adjust index after insertion
-            # Create the label node
-            label = c_ast.Label(name=label_name, stmt=c_ast.Compound(block_items=[]))
-            end_label = c_ast.Label(name = end_label_name, stmt = c_ast.Compound(block_items=[]))
-            
-            # Replace the for loop with the label
-            fxn.body.block_items[i] = label
-
-            fxn.body.block_items.insert(i+1, c_ast.If(
-                    cond=stmt.cond,
-                    iftrue=c_ast.Compound(block_items=[]),
-                    iffalse=c_ast.Compound(block_items=[c_ast.Goto(name=end_label_name)])
-                ))
-            
-            i += 1
-
-            # Add the loop's body; wrap non-compound bodies in a compound statement
-            if isinstance(stmt.stmt, c_ast.Compound):
-                for loop_operation in stmt.stmt.block_items +[stmt.next]:
-                    fxn.body.block_items.insert(i+1, loop_operation)
-                    i += 1
-            else:
-                fxn.body.block_items.insert(i, stmt.stmt)
-
-            # Add the condition check: if (cond) goto label; if no condition, do an unconditional goto
-            if stmt.cond is not None:
-                fxn.body.block_items.insert(i+1, c_ast.Goto(name=label_name))
-                i += 1
-
-            else:
-                fxn.body.block_items.insert(i+1, c_ast.Goto(name=label_name))
-                i += 1
-
-            fxn.body.block_items.insert(i+1, end_label)
-            break
-
-    return fxn, label_name
-
 
 def goto_if_stmt(ast):
     # Pick all function definitions from the AST.
@@ -240,55 +102,6 @@ def goto_if_stmt(ast):
     return ast
 
 
-class FunctionRenamer(c_ast.NodeVisitor):
-    def __init__(self):
-        self.counter = 1
-        self.var_map = {}
-
-    def visit_FuncDef(self, node):
-        # Rename parameters.
-        # print("Funcdef!!")
-        func_type = node.decl.type
-        if func_type.args:
-            for param in func_type.args.params:
-                if isinstance(param, c_ast.Decl):
-                    new_name = f"var_{self.counter}"
-                    self.var_map[param.name] = new_name
-                    param.name = new_name
-                    if isinstance(param.type, c_ast.TypeDecl):
-                        param.type.declname = new_name
-
-                    if isinstance(param.type, c_ast.ArrayDecl):
-                        param.type.type.declname = new_name
-
-                    if isinstance(param.type, c_ast.PtrDecl):
-                        param.type.type.declname = new_name
-                    
-                    self.counter += 1
-        # Process the function body.
-        self.visit(node.body)
-
-    def visit_Decl(self, node):
-        # Rename a local variable declaration if it is not already renamed.
-        if isinstance(node.type, c_ast.TypeDecl) and node.name and node.name not in self.var_map:
-            new_name = f"var_{self.counter}"
-            self.var_map[node.name] = new_name
-            node.name = new_name
-            node.type.declname = new_name
-            self.counter += 1
-        self.generic_visit(node)
-
-    def visit_ID(self, node):
-        # Replace identifier usage with its new unique name.
-        if node.name in self.var_map:
-            node.name = self.var_map[node.name]
-
-def unique_locals(ast):
-    # Process each function definition independently.
-    renamer = FunctionRenamer()
-    renamer.visit(ast)
-    return ast
-
 def globalize_local(ast):
     # Get all function definitions from the top-level declarations.
     func_defs = [node for node in ast.ext if isinstance(node, c_ast.FuncDef)]
@@ -364,20 +177,6 @@ def delete_global(ast):
 
     GlobalVarReplacer().visit(ast)
     return ast
-
-def create_binary_op(names, n):
-    if (len(names) < 2):
-        return c_ast.Constant(type="int", value="0")
-
-    # loosely try to make a real issue
-    first = random.choice(names)
-    ctr = c_ast.BinaryOp(op = "*", left = first, right = first)
-
-    for i in range(1, n):
-        ctr = c_ast.BinaryOp(op = "*", left = ctr, right = c_ast.BinaryOp(op = "+", left = first, right = c_ast.Constant(type="int", value=i)))
-
-    return c_ast.BinaryOp(op="%", left=ctr, right = c_ast.Constant(type="int", value=n))
-
     
 def mutate_variable(ast):
 
@@ -413,83 +212,15 @@ def mutate_variable(ast):
 
     return ast
 
-def opaquify(ast):
 
-    # Filter functions that have a body with statements.
-    valid_funcs = [f for f in ast.ext if hasattr(f, "body") and f.body and getattr(f.body, "block_items", None)]
-    
-    if not valid_funcs:
-        return ast
-
-    while valid_funcs:
-        # Select a random function.
-        selected_func = random.choice(valid_funcs)
-
-        valid_funcs.remove(selected_func)
-
-        # Filter statements in the function's body that are either an assignment or an if statement.
-        candidates = []
-
-        def collect_candidates(node):
-            if isinstance(node, (c_ast.Assignment, c_ast.If, c_ast.For, c_ast.While, c_ast.Decl, c_ast.BinaryOp)):
-                candidates.append(node)
-            for _, child in node.children():
-                collect_candidates(child)
-
-        for stmt in selected_func.body.block_items:
-            collect_candidates(stmt)
-        
-        if not candidates and not valid_funcs:
-            return ast
-
-    # Select a random statement from the candidates.
-    selected_stmt = random.choice(candidates)
-
-    to_be_opaquified = None
-
-    if isinstance(selected_stmt, c_ast.Decl):
-        gen = c_generator.CGenerator()
-        decl_type = gen.visit(selected_stmt.type)
-        if selected_stmt.init is not None:
-            to_be_opaquified = selected_stmt.init
-        else:
-            raise Exception("Declaration without initialization not supported")
-    elif isinstance(selected_stmt, (c_ast.If, c_ast.For, c_ast.While)):
-        to_be_opaquified = selected_stmt.cond
-    elif isinstance(selected_stmt, c_ast.BinaryOp):
-        to_be_opaquified = selected_stmt
-    else:
-        to_be_opaquified = selected_stmt.rvalue
-
-
-    global_vars = [c_ast.ID(name=decl.name) for decl in ast.ext
-                   if isinstance(decl, c_ast.Decl) and not isinstance(decl.type, c_ast.FuncDecl)]
-    local_vars = [c_ast.ID(name=decl.name) for decl in selected_func.body.block_items
-                  if isinstance(decl, c_ast.Decl)]
-
-    # todo; generate these on-the-fly
-    opaque_expr = create_binary_op(global_vars + local_vars, random.randint(2, 5))
-
-    # print(selected_stmt,"\n", opaque_expr)
-    # print(selected_stmt, "\nOpq:\n", opaque_expr)
-    if isinstance(selected_stmt, c_ast.Decl):
-        selected_stmt.init = c_ast.BinaryOp(op = " + ", left = selected_stmt.init, right = opaque_expr)
-    elif isinstance(selected_stmt, (c_ast.If, c_ast.For, c_ast.While)):
-        selected_stmt.cond = c_ast.BinaryOp(op = " || ", left = selected_stmt.cond, right = opaque_expr)
-    elif isinstance(selected_stmt, c_ast.BinaryOp):
-        selected_stmt = c_ast.BinaryOp(op = "+", left = selected_stmt, right = opaque_expr)
-    else:
-        selected_stmt.rvalue = c_ast.BinaryOp(op = "+", left = selected_stmt.rvalue, right = opaque_expr)
-
-    return ast
 
 def MC_mutate(ast, itr = 250):
 
     ast = unique_locals(ast)
 
     for i in range(len(ast.ext)):
-        ast.ext[i], _ = add_goto_delete_for(ast.ext[i])
-        ast.ext[i], _ = add_goto_delete_while(ast.ext[i])
+        ast.ext[i] = unroll_loops(ast.ext[i])
+
 
     for i in tqdm(range(itr)):
         old_ast = copy.deepcopy(ast)
@@ -521,10 +252,7 @@ def main():
     s = b'\x93e\x0c\xb9\xf3'
     random.seed(s)
 
-    global name_dict
-
-    name_dict = open("../words_alpha.txt", 'r').read().split("\n")
-    name_dict = [i for i in name_dict if len(i) > 2]
+    init_rand_names()
 
     # Example C code including control flow constructs.
     c_code = r'''
@@ -545,7 +273,6 @@ def main():
             int i = (low - 1);
 
             for (int j = low; j <= high - 1; j++) {
-
                 if (arr[j] <= pivot) {
 
                     i++;
@@ -553,7 +280,6 @@ def main():
                     swap(&arr[i], &arr[j]);
 
                 }
-
             }
 
             swap(&arr[i + 1], &arr[high]);
@@ -596,9 +322,13 @@ def main():
     parser = c_parser.CParser()
     ast = parser.parse(c_code)
 
-    #ast = opaquify(ast)
+    ast = opaquify(ast)
+    # ast = opaquify(ast)
 
-    ast = MC_mutate(ast)
+    ast = remove_oqaque_clauses(ast)
+
+
+    #ast = MC_mutate(ast)
 
     # ast = delete_global(ast)
     
