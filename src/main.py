@@ -103,8 +103,113 @@ def goto_if_stmt(ast):
     
     return ast
 
+def dummy_operation(ast):
+    # Pick all function definitions from the AST.
+    func_defs = [node for node in ast.ext if isinstance(node, c_ast.FuncDef)]
+    if not func_defs:
+        return ast
 
+    # Select a random function.
+    selected_func = random.choice(func_defs)
+
+    # Ensure the function has a body with statements.
+    if not selected_func.body or not selected_func.body.block_items:
+        return ast
     
+
+    # Select a random global variable.
+    globals_decl = [
+        node for node in ast.ext
+        if isinstance(node, c_ast.Decl) and not isinstance(node.type, c_ast.FuncDecl)
+    ]
+    if not globals_decl:
+        return ast
+    global_var = random.choice(globals_decl)
+    
+    # Retrieve the variable name from the global declaration.
+    var_name = global_var.name
+
+    # Create a dummy assignment: assign the value 42 to the global variable.
+    dummy_assignment = c_ast.Assignment(
+        op="=",
+        lvalue=c_ast.ID(name=var_name),
+        rvalue=c_ast.Constant(type="int", value="42")
+    )
+
+    #print("Dummy assignment:", dummy_assignment)
+    #print(selected_func.decl.name)
+
+    # Insert the dummy assignment at the beginning of the selected function's body.
+    insert_index = random.randint(0, len(selected_func.body.block_items))
+    selected_func.body.block_items.insert(insert_index, dummy_assignment)
+    
+    return ast
+
+def conditionalize_goto(ast):
+    # Select a random function definition.
+    func_defs = [node for node in ast.ext if isinstance(node, c_ast.FuncDef)]
+    if not func_defs:
+        return ast
+    selected_func = random.choice(func_defs)
+    if not selected_func.body or not getattr(selected_func.body, "block_items", None):
+        return ast
+
+    # Locate all goto statements in the function body.
+    goto_candidates = [(i, stmt) for i, stmt in enumerate(selected_func.body.block_items)
+                        if isinstance(stmt, c_ast.Goto)]
+    if not goto_candidates:
+        return ast
+
+    # Select a random goto statement.
+    index, goto_stmt = random.choice(goto_candidates)
+
+    # Create an if(true) statement enclosing the goto.
+    true_condition = c_ast.Constant(type="int", value="1")
+    new_if = c_ast.If(
+        cond=true_condition,
+        iftrue=c_ast.Compound(block_items=[goto_stmt]),
+        iffalse=None
+    )
+
+    # Replace the original goto with the new if statement.
+    selected_func.body.block_items[index] = new_if
+
+    return ast
+
+def inverse_conditionalize_goto(ast):
+    # Select a random function definition.
+    func_defs = [node for node in ast.ext if isinstance(node, c_ast.FuncDef)]
+    if not func_defs:
+        return ast
+    selected_func = random.choice(func_defs)
+    if not selected_func.body or not getattr(selected_func.body, "block_items", None):
+        return ast
+
+    # Locate candidate if statements with condition constant "1".
+    if_candidates = [(i, stmt) for i, stmt in enumerate(selected_func.body.block_items)
+                        if isinstance(stmt, c_ast.If)
+                        and isinstance(stmt.cond, c_ast.Constant)
+                        and stmt.cond.type == "int"
+                        and stmt.cond.value == "1"]
+    if not if_candidates:
+        return ast
+
+    # Select a random candidate.
+    index, if_stmt = random.choice(if_candidates)
+
+    # Ensure the if has a Compound for its true branch.
+    if not if_stmt.iftrue or not isinstance(if_stmt.iftrue, c_ast.Compound):
+        return ast
+
+    # Retrieve the list of statements from the iftrue branch.
+    block_items = if_stmt.iftrue.block_items or []
+
+    # Remove the if statement and insert its body's statements at the same position.
+    del selected_func.body.block_items[index]
+    for stmt in reversed(block_items):
+        selected_func.body.block_items.insert(index, stmt)
+    return ast
+
 def mutate_variable(ast):
 
     # Collect global declarations that are not function definitions.
@@ -137,7 +242,7 @@ def mutate_variable(ast):
 
     roll = random.random()
 
-    print(target.type.type.names)
+    #print(target.type.type.names)
 
     if (roll < .3):
         mutation = random.choice(mutations)
@@ -167,8 +272,9 @@ def mutate_variable(ast):
     return ast
 
 
-
 def MC_mutate(ast, itr = 250):
+
+    fail_n = 1
 
     ast = unique_locals(ast)
 
@@ -176,37 +282,71 @@ def MC_mutate(ast, itr = 250):
         ast.ext[i] = unroll_loops(ast.ext[i])
 
 
+    m_itr = 0
+    n_itr = 1
+    generator = c_generator.CGenerator()
+
+
     for i in tqdm(range(itr)):
-        old_ast = copy.deepcopy(ast)
-        mode = random.randint(0, 100)
-
-        if (mode < 25):
-            # continue
-            ast = globalize_local(ast)
-        elif (mode < 30):
-            # is own inverse
-            ast = mutate_variable(ast)
-        elif (mode < 97):
-            # continue
-            f = random.choice([opaquify, remove_oqaque_clauses])
-            ast = f(ast)
-        else:
-            # continue
-            ast = goto_if_stmt(ast)
         
-        generator = c_generator.CGenerator()
+        if (m_itr == 0):
+            old_ast = copy.deepcopy(ast)
 
-        code = generator.visit(ast)
-        if (not compile_and_test(code)):
-            ast = old_ast
+        if (m_itr < n_itr):
 
-    return ast
+            mode = random.randint(0, 100)
+
+            if (mode < 10):
+                # continue
+                ast = globalize_local(ast)
+            elif (mode < 10):
+                # is own inverse
+                ast = mutate_variable(ast)
+            elif (mode < 20):
+                ast = dummy_operation(ast)
+            elif (mode < 30):
+                if (random.random() > .5):
+                    ast = conditionalize_goto(ast)
+                else:
+                    ast = inverse_conditionalize_goto(ast)
+            elif (mode < 90):
+                # continue
+                f = random.choice([opaquify, remove_oqaque_clauses])
+                ast = f(ast)
+            else:
+                # continue
+                ast = goto_if_stmt(ast)
+
+            m_itr += 1
+            
+        else:
+
+            code = generator.visit(ast)
+            if (not compile_and_test(code)):
+                #print("Fail!\n")
+                ast = old_ast
+                fail_n += m_itr
+
+            m_itr = 0
+            n_itr = i / fail_n
+            
+
+    return (old_ast, ast)[compile_and_test(generator.visit(ast))]
+
+# Early applicarion of AI --> MatEng
+# Find the stat of interest; compare wrt this?
+# Find stats of interest; evaluate wrt this; all behaviors you can compare...
+# Code similarity metrics; output
+# AST hamming distance
+# Compare the control flow
+# Explain how it works in the presentation
+# Send introductory slides beforehand
 
 def main():
 
     s = random.randbytes(5)
     s = b'\x93e\x0c\xb9\xf3'
-    random.seed(s)
+    #random.seed(s)
 
     init_rand_names()
 
@@ -230,7 +370,6 @@ def main():
 
             for (int j = low; j <= high - 1; j++) {
                 if (arr[j] <= pivot) {
-
                     i++;
 
                     swap(&arr[i], &arr[j]);
@@ -266,29 +405,29 @@ def main():
     pp.write(output)
     c_code = output.getvalue()
 
-    #print(c_code)
-
-    #print(compile_and_test(c_code))
-
-    #open("test.c","w+").write(c_code)
-    #compile_c_code("test.c")
-    #file_size = os.path.getsize('test.o')
-    #print(f"Compiled file size: {file_size} bytes")
-
     parser = c_parser.CParser()
     ast = parser.parse(c_code)
-    
+
     # ast = opaquify(ast)
 
-  
     ast = MC_mutate(ast)
+    #ast = unique_locals(ast)
+#
+    #for i in range(len(ast.ext)):
+    #    ast.ext[i] = unroll_loops(ast.ext[i])
+
+    #ast = goto_if_stmt(ast)
+    #ast = goto_if_stmt(ast)
+    #ast = goto_if_stmt(ast)
+
+    #for _ in range(3):
+    #    ast = inverse_conditionalize_goto(ast)
+    
 
     # ast = delete_global(ast)
     
     # ast.ext[1],_ = add_goto_delete_for(ast.ext[1])
     # ast = goto_if_stmt(ast)
-
-
 
     generator = c_generator.CGenerator()
 
