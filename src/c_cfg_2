@@ -1,108 +1,62 @@
 // Simplified CFG
 digraph {
-	N129 [label="Label: unquittable"]
-	N150 [label="goto haemolytic"]
-	N33 [label="Label: unrepentingly"]
-	N111 [label="swap(&var_4[var_8], &var_4[var_9])"]
-	N4 [label="End of swap"]
-	N141 [label="goto adamite"]
-	N99 [label="Label: burster"]
-	N2 [label="*var_1 = *var_2"]
-	N15 [label="Label: misedits"]
-	N166 [label="End of quickSort"]
-	N110 [label="var_8++"]
-	N8 [label="int var_9 = var_5"]
-	N18 [label="goto karyotin"]
-	N122 [label="return var_8 + 1"]
-	N45 [label="goto phytase"]
-	N7 [label="int var_8 = var_5 - 1"]
-	N124 [label="Function: quickSort"]
-	N125 [label="if(var_11 < var_12)"]
-	N72 [label="Label: trypanosomatous"]
-	N115 [label="Label: caping"]
-	N42 [label="Label: kyklops"]
-	N6 [label="int var_7 = var_4[var_6]"]
-	N9 [label="Label: reinauguration"]
-	N90 [label="Label: postphrenic"]
-	N36 [label="goto zoophilitic"]
-	N159 [label="quickSort(var_10, var_11, var_13 - 1)"]
-	N81 [label="Label: guahiban"]
-	N102 [label="goto cabots"]
-	N84 [label="goto sicklelike"]
-	N1 [label="int var_3 = *var_1"]
-	N63 [label="Label: squadded"]
-	N132 [label="goto watchmaker"]
-	N51 [label="Label: aerodontia"]
-	N27 [label="goto matrons"]
-	N11 [label="if(var_9 <= (var_6 - 1))"]
-	N24 [label="Label: lousing"]
-	N164 [label="Label: euproctis"]
-	N121 [label="swap(&var_4[var_8 + 1], &var_4[var_6])"]
-	N75 [label="goto budder"]
-	N93 [label="goto addlins"]
-	N0 [label="Function: swap"]
-	N117 [label="var_9++"]
-	N147 [label="Label: mun"]
-	N138 [label="Label: parvifolious"]
-	N66 [label="goto installment"]
-	N160 [label="quickSort(var_10, var_13 + 1, var_12)"]
-	N158 [label="int var_13 = partition(var_10, var_11, var_12)"]
-	N123 [label="End of partition"]
+	N41 [label="swap(&var_4[var_8 + 1], &var_4[var_6])"]
 	N5 [label="Function: partition"]
+	N30 [label="var_8++"]
+	N19 [label="Label: ghana"]
+	N62 [label="quickSort(var_10, var_13 + 1, var_12)"]
+	N2 [label="*var_1 = *var_2"]
+	N35 [label="Label: pietisms"]
+	N60 [label="int var_13 = partition(var_10, var_11, var_12)"]
+	N7 [label="int var_8 = var_5 - 1"]
+	N28 [label="Label: autoette"]
+	N42 [label="return var_8 + 1"]
+	N49 [label="Label: indestructible"]
+	N15 [label="if(var_4[var_9] <= var_7)"]
+	N8 [label="int var_9 = var_5"]
 	N3 [label="*var_2 = var_3"]
-	N108 [label="Label: oxfords"]
-	N59 [label="if(var_4[var_9] <= var_7)"]
-	N156 [label="Label: humous"]
-	N129 -> N138
-	N150 -> N156
-	N33 -> N42
-	N111 -> N115
-	N141 -> N147
-	N99 -> N108
-	N2 -> N3
-	N15 -> N24
-	N110 -> N111
-	N8 -> N9
-	N18 -> N24
-	N45 -> N51
-	N7 -> N8
-	N124 -> N125
-	N125 -> N129
-	N125 -> N164
-	N72 -> N81
-	N115 -> N117
-	N42 -> N51
-	N6 -> N7
-	N9 -> N11
-	N90 -> N99
-	N36 -> N42
-	N159 -> N160
-	N81 -> N90
-	N102 -> N108
-	N84 -> N90
-	N1 -> N2
-	N63 -> N72
-	N132 -> N138
-	N51 -> N59
-	N27 -> N33
-	N11 -> N15
-	N11 -> N121
-	N24 -> N33
-	N164 -> N166
-	N121 -> N122
-	N75 -> N81
-	N93 -> N99
-	N0 -> N1
-	N117 -> N9
-	N147 -> N156
-	N138 -> N147
-	N66 -> N72
-	N160 -> N164
-	N158 -> N159
+	N66 [label="Label: smoothies"]
+	N61 [label="quickSort(var_10, var_11, var_13 - 1)"]
+	N43 [label="End of partition"]
+	N68 [label="End of quickSort"]
+	N45 [label="if(var_11 < var_12)"]
+	N1 [label="int var_3 = *var_1"]
+	N0 [label="Function: swap"]
+	N37 [label="var_9++"]
+	N6 [label="int var_7 = var_4[var_6]"]
+	N31 [label="swap(&var_4[var_8], &var_4[var_9])"]
+	N9 [label="Label: turkicize"]
+	N11 [label="if(var_9 <= (var_6 - 1))"]
+	N58 [label="Label: autolater"]
+	N4 [label="End of swap"]
+	N44 [label="Function: quickSort"]
+	N41 -> N42
 	N5 -> N6
+	N30 -> N31
+	N19 -> N28
+	N62 -> N66
+	N2 -> N3
+	N35 -> N37
+	N60 -> N61
+	N7 -> N8
+	N28 -> N30
+	N49 -> N58
+	N15 -> N19
+	N15 -> N35
+	N8 -> N9
 	N3 -> N4
-	N108 -> N110
-	N59 -> N63
-	N59 -> N115
-	N156 -> N158
+	N66 -> N68
+	N61 -> N62
+	N45 -> N49
+	N45 -> N66
+	N1 -> N2
+	N0 -> N1
+	N37 -> N9
+	N6 -> N7
+	N31 -> N35
+	N9 -> N11
+	N11 -> N15
+	N11 -> N41
+	N58 -> N60
+	N44 -> N45
 }

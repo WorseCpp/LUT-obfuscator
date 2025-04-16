@@ -80,6 +80,10 @@ def process_label(label_stmt, cfg):
         stmt_entry, stmt_exits = process_statement(label_stmt.stmt, cfg)
         cfg.add_edge(label_node, stmt_entry)
         return (label_node, stmt_exits)
+    else:
+        return (label_node, [label_node])
+    
+
 def process_goto(goto_stmt, cfg):
     # Create a node for the goto statement.
     goto_node = cfg.new_node("goto " + goto_stmt.name)
@@ -91,7 +95,6 @@ def process_goto(goto_stmt, cfg):
         if goto_stmt.name not in cfg.pending_gotos:
             cfg.pending_gotos[goto_stmt.name] = []
         cfg.pending_gotos[goto_stmt.name].append(goto_node)
-        cfg.add_edge(goto_node, target_node)
     return (goto_node, [])
 
 def process_if(if_node, cfg):
@@ -154,8 +157,6 @@ def process_for(for_node, cfg):
     
     exit_node = cfg.new_node("exit for")
     cfg.add_edge(decision, exit_node)
-    return (decision, [exit_node])
-
 def build_cfg_from_func(func_def, cfg):
     # Build the CFG for a function definition.
     entry = cfg.new_node("Function: " + func_def.decl.name)
@@ -164,6 +165,11 @@ def build_cfg_from_func(func_def, cfg):
     end_node = cfg.new_node("End of " + func_def.decl.name)
     for node in body_exits:
         cfg.add_edge(node, end_node)
+    # Resolve any pending goto statements by connecting them to the function's end node.
+    for pending in cfg.pending_gotos.values():
+        for goto_node in pending:
+            cfg.add_edge(goto_node, end_node)
+    cfg.pending_gotos.clear()
     return entry
 
 def build_cfg_from_ast(ast):
@@ -180,66 +186,134 @@ def build_cfg_from_ast(ast):
 
 
 def simplify_cfg_graph(cfg):
-    # Build dictionaries to track parents, children, and labels.
-    labels = {}
-    children = {}
-    parents = {}
+
     
-    # Parse nodes and edges from the dot body.
-    for line in cfg.dot.body:
-        node_match = re.match(r'\s*(\w+)\s+\[label="([^"]+)"\]', line)
-        if node_match:
-            node_id, lbl = node_match.groups()
-            labels[node_id] = lbl
-            children.setdefault(node_id, [])
-            parents.setdefault(node_id, [])
-        edge_match = re.match(r'\s*(\w+)\s*->\s*(\w+)', line)
-        if edge_match:
-            src, dst = edge_match.groups()
-            children.setdefault(src, []).append(dst)
-            parents.setdefault(dst, []).append(src)
+    converged = False
+    for _ in range(10):
+        if (converged):
+            break
 
-    one_parent_child_nodes = []
-    # Identify nodes with exactly one parent and one child and print their labels.
-    for node in labels:
-        if len(parents.get(node, [])) == 1 and len(children.get(node, [])) == 1:
-            print("Node:", node, "Label:", labels[node])
-            one_parent_child_nodes.append(node)
+        # Save a snapshot of the current graph structure.
+        old_body = list(cfg.dot.body)
+        
+        #print(old_body)
 
-    filters = ["goto ", "Label:", "Empty"]
-    remove_set = set()
-    for node_id, lbl in labels.items():
-        if any(lbl.startswith(f) for f in filters):
+        # Build dictionaries to track parents, children, and labels.
+        labels = {}
+        children = {}
+        parents = {}
 
-            if node_id not in one_parent_child_nodes:
-                continue
+        # Parse nodes and edges from the dot body.
+        for line in cfg.dot.body:
+            node_match = re.match(r'\s*(\w+)\s+\[label="([^"]+)"\]', line)
+            if node_match:
+                node_id, lbl = node_match.groups()
+                labels[node_id] = lbl
+                children.setdefault(node_id, [])
+                parents.setdefault(node_id, [])
+            edge_match = re.match(r'\s*(\w+)\s*->\s*(\w+)', line)
+            if edge_match:
+                src, dst = edge_match.groups()
+                children.setdefault(src, []).append(dst)
+                parents.setdefault(dst, []).append(src)
 
-            remove_set.add(node_id)
+        one_parent_child_nodes = []
+        # Identify nodes with exactly one parent and one child.
+        for node in labels:
+            if len(parents.get(node, [])) == 1 and len(children.get(node, [])) == 1:
+                one_parent_child_nodes.append(node)
 
-    print(remove_set)
+        filters = ["goto ", "Label:", "Empty"]
+        remove_set = set()
+        for node_id, lbl in labels.items():
+            if any(lbl.startswith(f) for f in filters):
+                if node_id not in one_parent_child_nodes:
+                    continue
+                remove_set.add(node_id)
 
-    allowed_nodes = set(labels.keys()) - remove_set
+        allowed_nodes = set(labels.keys()) - remove_set
 
-    # Create a new simplified graph by combining adjacent remove_set nodes.
-    new_dot = graphviz.Digraph(comment="Simplified CFG")
-    for node_id in allowed_nodes:
-        new_dot.node(node_id, labels[node_id])
+        # Create a new simplified graph by combining adjacent remove_set nodes.
+        new_dot = graphviz.Digraph(comment="Simplified CFG")
+        for node_id in allowed_nodes:
+            new_dot.node(node_id, labels[node_id])
+
+        def follow_chain(node):
+            # Recursively follow the chain through removed nodes until reaching an allowed node.
+            current = node
+            while current not in allowed_nodes and current in children and len(children[current]) == 1:
+                current = children[current][0]
+            return current
+
+        # Reconstruct edges among allowed nodes bypassing removed nodes.
+        for src in allowed_nodes:
+            for child in children.get(src, []):
+                target = follow_chain(child)
+                if target and target in allowed_nodes:
+                    new_dot.edge(src, target)
+
+        # Identify all goto statement nodes with no incoming edges.
+        goto_no_parent = [
+            node_id for node_id, lbl in labels.items()
+            if lbl.startswith("goto ") and len(parents.get(node_id, [])) == 0
+        ]
+        # Remove goto_no_parent nodes from the graph.
+        filtered = set(allowed_nodes) - set(goto_no_parent)
+        new_dot_filtered = graphviz.Digraph(comment="Simplified CFG")
+        for nid in filtered:
+            new_dot_filtered.node(nid, labels[nid])
+
+        def follow_chain_filtered(node):
+            current = node
+            while current not in filtered and current in children and len(children[current]) == 1:
+                current = children[current][0]
+            return current
+
+        for src in filtered:
+            for child in children.get(src, []):
+                target = follow_chain_filtered(child)
+                if target and target in filtered:
+                    new_dot_filtered.edge(src, target)
+        new_dot = new_dot_filtered
+
+        # Identify labels (nodes whose label starts with "Label:") that have no incoming goto edges.
+        labels_no_goto = []
+        for node_id, lbl in labels.items():
+            if lbl.startswith("Label:"):
+                incoming = parents.get(node_id, [])
+                if not any(labels[parent].startswith("goto ") for parent in incoming):
+                    labels_no_goto.append(node_id)
+        
+        for lbl in labels_no_goto:
+            if lbl in children and len(children[lbl]) == 1:
+                child = children[lbl][0]
+                new_edges = []
+                for line in new_dot.body:
+                    edge_match = re.match(r'\s*(\w+)\s*->\s*(\w+)', line)
+                    if edge_match:
+                        src, dst = edge_match.groups()
+                        if dst == lbl:
+                            line = f'    {src} -> {child}'
+                    new_edges.append(line)
+                new_dot.body = new_edges
+
+        new_body = []
+        for line in new_dot.body:
+            node_match = re.match(r'\s*(\w+)\s+\[label="([^"]+)"\]', line)
+            if node_match:
+                node_id = node_match.group(1)
+                if node_id in labels_no_goto:
+                    continue
+            new_body.append(line)
+        new_dot.body = new_body
+
+        # Update cfg.dot with the new simplified graph.
+        cfg.dot = new_dot
+
+        # Check convergence by comparing the body of the dot graphs.
+        if list(cfg.dot.body) == old_body:
+            converged = True
     
-    def follow_chain(node):
-        # Recursively follow the chain through removed nodes until reaching an allowed node.
-        current = node
-        while current not in allowed_nodes and current in children and len(children[current]) == 1:
-            current = children[current][0]
-        return current
-
-    # Reconstruct edges among allowed nodes bypassing removed nodes.
-    for src in allowed_nodes:
-        for child in children.get(src, []):
-            target = follow_chain(child)
-            if target and target in allowed_nodes:
-                new_dot.edge(src, target)
-    
-    cfg.dot = new_dot
     return cfg
 
 def gen_simplified_cfg(ast):

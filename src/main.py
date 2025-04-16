@@ -30,7 +30,7 @@ def main():
 
     s = random.randbytes(5)
     s = b'\x93e\x0c\xb9\xf3'
-    #random.seed(s)
+    random.seed(s)
 
     init_rand_names()
 
@@ -61,10 +61,10 @@ def main():
                 }
             }
 
+
             swap(&arr[i + 1], &arr[high]);
 
             return (i + 1);
-
         }
 
 
@@ -83,8 +83,6 @@ def main():
         }
     '''
 
-
-
     pp = pcpp.Preprocessor()
     pp.parse(c_code)
     output = StringIO()
@@ -98,40 +96,24 @@ def main():
 
     #ast = opaquify(ast)
     #show_cfg(ast)
-    #render_cfg(gen_simplified_cfg(ast))    
+
+    ast = goto_if_stmt(ast)
+    ast = goto_if_stmt(ast)
+    ast = goto_if_stmt(ast)
+    ast = goto_if_stmt(ast)
+    ast = goto_if_stmt(ast)
+    ast = goto_if_stmt(ast)
+
+    #render_cfg(build_cfg_from_ast(ast))    
 
 
 
-    #render_cfg(gen_simplified_cfg(ast))    
+    render_cfg(gen_simplified_cfg(ast))    
 
     #ast = MC_mutate(ast)
 
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
 
-    render_cfg(build_cfg_from_ast(ast))
+    #render_cfg(build_cfg_from_ast(ast))
     #render_cfg(gen_simplified_cfg(ast))    
 
 
