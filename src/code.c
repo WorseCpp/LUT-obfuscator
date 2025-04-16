@@ -10,7 +10,7 @@ int partition(int var_4[], int var_5, int var_6)
   int var_7 = var_4[var_6];
   int var_8 = var_5 - 1;
   int var_9 = var_5;
-  acquent:
+  vaagmer:
   {
   }
 
@@ -19,34 +19,16 @@ int partition(int var_4[], int var_5, int var_6)
   }
   else
   {
-    goto tabel;
+    goto unenlivening;
   }
   if (var_4[var_9] <= var_7)
   {
-    goto endochorionic;
+    var_8++;
+    swap(&var_4[var_8], &var_4[var_9]);
   }
-  else
-  {
-    goto galligaskins;
-  }
-  endochorionic:
-  {
-  }
-
-  var_8++;
-  swap(&var_4[var_8], &var_4[var_9]);
-  goto parameterization;
-  galligaskins:
-  {
-  }
-
-  parameterization:
-  {
-  }
-
   var_9++;
-  goto acquent;
-  tabel:
+  goto vaagmer;
+  unenlivening:
   {
   }
 
@@ -58,9 +40,27 @@ void quickSort(int var_10[], int var_11, int var_12)
 {
   if (var_11 < var_12)
   {
-    int var_13 = partition(var_10, var_11, var_12);
-    quickSort(var_10, var_11, var_13 - 1);
-    quickSort(var_10, var_13 + 1, var_12);
+    goto potboilers;
   }
+  else
+  {
+    goto semispheroidal;
+  }
+  potboilers:
+  {
+  }
+
+  int var_13 = partition(var_10, var_11, var_12);
+  quickSort(var_10, var_11, var_13 - 1);
+  quickSort(var_10, var_13 + 1, var_12);
+  goto nonsupression;
+  semispheroidal:
+  {
+  }
+
+  nonsupression:
+  {
+  }
+
 }
 
