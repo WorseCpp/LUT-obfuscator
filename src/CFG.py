@@ -334,7 +334,7 @@ def simplify_cfg_graph(cfg):
             connected_nodes.add(m.group(1))
             connected_nodes.add(m.group(2))
     
-    node_decl_pattern = re.compile(r'\s*(\w+)\s*\[label="([^"]+)"\]')
+    node_decl_pattern = re.compile(r'\s*(\w+)\s*\[label="Empty"\]')
     new_body = []
     for line in cfg.dot.body:
         m = node_decl_pattern.match(line)
