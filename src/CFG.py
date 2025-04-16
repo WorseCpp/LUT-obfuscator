@@ -91,9 +91,6 @@ def process_goto(goto_stmt, cfg):
         if goto_stmt.name not in cfg.pending_gotos:
             cfg.pending_gotos[goto_stmt.name] = []
         cfg.pending_gotos[goto_stmt.name].append(goto_node)
-    return (goto_node, [])
-    if hasattr(cfg, "label_nodes") and goto_stmt.name in cfg.label_nodes:
-        target_node = cfg.label_nodes[goto_stmt.name]
         cfg.add_edge(goto_node, target_node)
     return (goto_node, [])
 
