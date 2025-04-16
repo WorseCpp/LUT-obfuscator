@@ -27,33 +27,6 @@ def compile_and_test(code):
     return bool(res.returncode)
 
 
-def show_cfg(c_code):
-    parser = c_parser.CParser()
-    ast = parser.parse(c_code)
-
-    generator = c_generator.CGenerator()
-    print("Generated code;\n", generator.visit(ast))
-    
-    cfg = CFG()
-    
-    # Process each function definition in the AST.
-    for ext in ast.ext:
-        if isinstance(ext, c_ast.FuncDef):
-            build_cfg_from_func(ext, cfg)
-    
-    # Render and view the CFG as a PNG image.
-    cfg.dot.render("c_cfg", format="png", view=True)
-
-def show_cfg(ast):
-    cfg = CFG()
-    
-    # Process each function definition in the AST.
-    for ext in ast.ext:
-        if isinstance(ext, c_ast.FuncDef):
-            build_cfg_from_func(ext, cfg)
-    
-    # Render and view the CFG as a PNG image.
-    cfg.dot.render("c_cfg", format="png", view=True)
 
 def rand_name():
     choice = random.choice(name_dict)
@@ -64,3 +37,27 @@ def init_rand_names():
     global name_dict
     name_dict = open("../words_alpha.txt", 'r').read().split("\n")
     name_dict = [i for i in name_dict if len(i) > 2]
+
+img_ctr = 0
+
+def get_img_name():
+    global img_ctr
+    img_ctr += 1
+    return f"c_cfg_{img_ctr}"
+
+def render_cfg(cfg):
+    # Render and view the CFG as a PNG image.
+    cfg.dot.render(get_img_name(), format="png", view=True)
+
+
+def show_cfg(ast):
+        
+    cfg = CFG()
+    
+    # Process each function definition in the AST.
+    for ext in ast.ext:
+        if isinstance(ext, c_ast.FuncDef):
+            build_cfg_from_func(ext, cfg)
+    
+    # Render and view the CFG as a PNG image.
+    cfg.dot.render(get_img_name(), format="png", view=True)

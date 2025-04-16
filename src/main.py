@@ -16,6 +16,8 @@ from io import StringIO
 
 from tqdm import tqdm
 
+from score_ast import *
+
 def goto_if_stmt(ast):
     # Pick all function definitions from the AST.
     func_defs = [node for node in ast.ext if isinstance(node, c_ast.FuncDef)]
@@ -342,6 +344,8 @@ def MC_mutate(ast, itr = 250):
 # Explain how it works in the presentation
 # Send introductory slides beforehand
 
+
+
 def main():
 
     s = random.randbytes(5)
@@ -399,6 +403,8 @@ def main():
         }
     '''
 
+
+
     pp = pcpp.Preprocessor()
     pp.parse(c_code)
     output = StringIO()
@@ -409,20 +415,23 @@ def main():
     ast = parser.parse(c_code)
 
     # ast = opaquify(ast)
+    #show_cfg(ast)
+    #render_cfg(gen_simplified_cfg(ast))    
 
-    ast = MC_mutate(ast)
-    #ast = unique_locals(ast)
-#
-    #for i in range(len(ast.ext)):
-    #    ast.ext[i] = unroll_loops(ast.ext[i])
 
-    #ast = goto_if_stmt(ast)
-    #ast = goto_if_stmt(ast)
+    #ast = MC_mutate(ast)
+    ast = unique_locals(ast)
+
+    for i in range(len(ast.ext)):
+        ast.ext[i] = unroll_loops(ast.ext[i])
+
+    ast = goto_if_stmt(ast)
+    ast = goto_if_stmt(ast)
     #ast = goto_if_stmt(ast)
 
     #for _ in range(3):
     #    ast = inverse_conditionalize_goto(ast)
-    
+    render_cfg(gen_simplified_cfg(ast))    
 
     # ast = delete_global(ast)
     
@@ -435,7 +444,7 @@ def main():
     print("Generated code;\n", code)
 
     print(compile_c_code(code), compile_and_test(code))
-    show_cfg(ast)
+    #show_cfg(ast)
 
 if __name__ == "__main__":
     main()
