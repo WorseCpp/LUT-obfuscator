@@ -182,177 +182,67 @@ def build_cfg_from_ast(ast):
     return cfg
 
 
-def simplify_cfg_graph(cfg):   
-
-    # Build mappings of incoming and outgoing edges using the dot object's body.
-    edges = []
+def simplify_cfg_graph(cfg):
+    # Build dictionaries to track parents, children, and labels.
+    labels = {}
+    children = {}
+    parents = {}
+    
+    # Parse nodes and edges from the dot body.
     for line in cfg.dot.body:
-        m = re.match(r'\s*(\w+)\s*->\s*(\w+)', line)
-        if m:
-            edges.append((m.group(1), m.group(2)))
+        node_match = re.match(r'\s*(\w+)\s+\[label="([^"]+)"\]', line)
+        if node_match:
+            node_id, lbl = node_match.groups()
+            labels[node_id] = lbl
+            children.setdefault(node_id, [])
+            parents.setdefault(node_id, [])
+        edge_match = re.match(r'\s*(\w+)\s*->\s*(\w+)', line)
+        if edge_match:
+            src, dst = edge_match.groups()
+            children.setdefault(src, []).append(dst)
+            parents.setdefault(dst, []).append(src)
 
-    incoming = {}
-    outgoing = {}
-    for frm, to in edges:
-        outgoing.setdefault(frm, set()).add(to)
-        incoming.setdefault(to, set()).add(frm)
+    one_parent_child_nodes = []
+    # Identify nodes with exactly one parent and one child and print their labels.
+    for node in labels:
+        if len(parents.get(node, [])) == 1 and len(children.get(node, [])) == 1:
+            print("Node:", node, "Label:", labels[node])
+            one_parent_child_nodes.append(node)
 
-    # Identify nodes that have exactly one parent and one child.
-    simplifiable_nodes = []
-    all_nodes = set(list(incoming.keys()) + list(outgoing.keys()))
-    for node in all_nodes:
-        if (node in incoming and len(incoming[node]) == 1) and (node in outgoing and len(outgoing[node]) == 1):
-            simplifiable_nodes.append(node)
+    filters = ["goto ", "Label:", "Empty"]
+    remove_set = set()
+    for node_id, lbl in labels.items():
+        if any(lbl.startswith(f) for f in filters):
 
-    # For demonstration, print the node IDs that can be simplified.
-    for node in simplifiable_nodes:
-        print(f"Node {node} can be simplified (one parent and one child).")
-
-    # Iteratively simplify nodes that have exactly one parent and one child.
-    changed = True
-    edges = []
-    for line in cfg.dot.body:
-        m = re.match(r'\s*(\w+)\s*->\s*(\w+)', line)
-        if m:
-            edges.append((m.group(1), m.group(2)))
-    while changed:
-        changed = False
-        incoming = {}
-        outgoing = {}
-        for frm, to in edges:
-            outgoing.setdefault(frm, set()).add(to)
-            incoming.setdefault(to, set()).add(frm)
-        simplifiable = []
-        all_nodes = set(list(incoming.keys()) + list(outgoing.keys()))
-        for node in all_nodes:
-            if node in incoming and len(incoming[node]) == 1 and node in outgoing and len(outgoing[node]) == 1:
-                parent = list(incoming[node])[0]
-                child = list(outgoing[node])[0]
-                if len(outgoing.get(parent, set())) == 1 and len(incoming.get(child, set())) == 1:
-                    simplifiable.append(node)
-        if not simplifiable:
-            break
-        new_edges = []
-        # Remove edges that include a simplifiable node.
-        for frm, to in edges:
-            if frm in simplifiable or to in simplifiable:
+            if node_id not in one_parent_child_nodes:
                 continue
-            new_edges.append((frm, to))
-        # For every simplifiable node, connect its parent directly to its child.
-        for node in simplifiable:
-            parent = list(incoming[node])[0]
-            child = list(outgoing[node])[0]
-            if (parent, child) not in new_edges:
-                new_edges.append((parent, child))
-            changed = True
-        edges = new_edges
 
-    # Rebuild the CFG dot edges with the simplified structure.
-    new_body = []
-    for line in cfg.dot.body:
-        # Preserve non-edge definitions such as node declarations.
-        if not re.match(r'\s*\w+\s*->\s*\w+', line):
-            new_body.append(line)
-    for frm, to in edges:
-        new_body.append(f"    {frm} -> {to}")
-    #cfg.dot.body = new_body
+            remove_set.add(node_id)
 
-    # Build a mapping from node IDs to their labels
-    node_decl_pattern = re.compile(r'\s*(\w+)\s*\[label="([^"]+)"\]')
-    node_labels = {}
-    for line in new_body:
-        m = node_decl_pattern.match(line)
-        if m:
-            node_labels[m.group(1)] = m.group(2)
+    print(remove_set)
 
-    # Build an adjacency list from the edge definitions
-    edge_pattern = re.compile(r'\s*(\w+)\s*->\s*(\w+)')
-    adj = {}
-    for line in new_body:
-        m = edge_pattern.match(line)
-        if m:
-            frm, to = m.groups()
-            adj.setdefault(frm, set()).add(to)
+    allowed_nodes = set(labels.keys()) - remove_set
 
-    # Starting from function definition nodes (labels starting with "Function:")
-    reachable = set()
-    stack = [node for node, label in node_labels.items() if label.startswith("Function:")]
-    while stack:
-        current = stack.pop()
-        if current in reachable:
-            continue
-        reachable.add(current)
-        for child in adj.get(current, []):
-            if child not in reachable:
-                stack.append(child)
-
-    # Filter out node declarations and edge definitions 
-    # to keep only nodes reachable from a function definition.
-    cleaned_body = []
-    for line in new_body:
-        if edge_pattern.match(line):
-            m = edge_pattern.match(line)
-            frm, to = m.groups()
-            if frm in reachable and to in reachable:
-                cleaned_body.append(line)
-        elif node_decl_pattern.match(line):
-            m = node_decl_pattern.match(line)
-            if m.group(1) in reachable:
-                cleaned_body.append(line)
-        else:
-            cleaned_body.append(line)
-                
-    cfg.dot.body = cleaned_body
+    # Create a new simplified graph by combining adjacent remove_set nodes.
+    new_dot = graphviz.Digraph(comment="Simplified CFG")
+    for node_id in allowed_nodes:
+        new_dot.node(node_id, labels[node_id])
     
-    edge_pattern = re.compile(r'\s*(\w+)\s*->\s*(\w+)')
-    node_decl_pattern = re.compile(r'\s*(\w+)\s*\[label="([^"]+)"')
-    edge_nodes = set()
+    def follow_chain(node):
+        # Recursively follow the chain through removed nodes until reaching an allowed node.
+        current = node
+        while current not in allowed_nodes and current in children and len(children[current]) == 1:
+            current = children[current][0]
+        return current
 
-    for line in cfg.dot.body:
-        m = edge_pattern.search(line)
-        if m:
-            edge_nodes.add(m.group(1))
-            edge_nodes.add(m.group(2))
-
-    new_body = []
-    for line in cfg.dot.body:
-        m = node_decl_pattern.search(line)
-        if m:
-            if m.group(1) in edge_nodes:
-                new_body.append(line)
-        else:
-            new_body.append(line)
-
-    cfg.dot.body = new_body
-
-    # Remove node declarations for nodes that are not connected by any edge.
-    edge_pattern = re.compile(r'\s*(\w+)\s*->\s*(\w+)')
-    connected_nodes = set()
-    for line in cfg.dot.body:
-        m = edge_pattern.search(line)
-        if m:
-            connected_nodes.add(m.group(1))
-            connected_nodes.add(m.group(2))
+    # Reconstruct edges among allowed nodes bypassing removed nodes.
+    for src in allowed_nodes:
+        for child in children.get(src, []):
+            target = follow_chain(child)
+            if target and target in allowed_nodes:
+                new_dot.edge(src, target)
     
-    node_decl_pattern = re.compile(r'\s*(\w+)\s*\[label=Empty\]')
-    node_decl_pattern2 = re.compile(r'\s*(\w+)\s*\[label=join\]')
-    
-    new_body = []
-    for line in cfg.dot.body:
-        m = node_decl_pattern.match(line)
-        m2 = node_decl_pattern2.match(line)
-        if m or m2:
-            if (m):
-                if m.group(1) in connected_nodes:
-                    new_body.append(line)
-            elif (m2):
-                if m2.group(1) in connected_nodes:
-                    new_body.append(line)
-        else:
-            new_body.append(line)
-            
-    cfg.dot.body = new_body
-
+    cfg.dot = new_dot
     return cfg
 
 def gen_simplified_cfg(ast):

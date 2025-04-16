@@ -18,13 +18,24 @@ def compile_c_code(code, v = True):
 def compile_and_test(code):
     if not compile_c_code(code, False):
         return False
+    
     compile_command = ["gcc", "-O3", "-o", "out", "main.o", "code.o"]
-    res = subprocess.run(compile_command, capture_output=True, text=True)
+
+    try:
+        res = subprocess.run(compile_command, capture_output=True, text=True, timeout=1.0)
+    except subprocess.TimeoutExpired:
+        return False
+    
     if res.returncode != 0:
         return False
+    
     test_cmd = ["./out"]
-    res = subprocess.run(test_cmd, capture_output=True, text=True)
-    return bool(res.returncode)
+    
+    try:
+        res = subprocess.run(test_cmd, capture_output=True, text=True, timeout=1.0)
+        return bool(res.returncode)
+    except subprocess.TimeoutExpired:
+        return False
 
 
 
