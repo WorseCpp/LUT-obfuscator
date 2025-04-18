@@ -284,6 +284,9 @@ def MC_mutate(ast, itr = 250):
     generator = c_generator.CGenerator()
 
     bar = tqdm(total=itr)
+
+    old_ast = copy.deepcopy(ast)
+
     i = 0
     for attmp in range(100 * itr):
         

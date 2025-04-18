@@ -378,10 +378,7 @@ def gen_simplified_cfg(ast):
     return simplify_cfg_graph(cfg)
 
 # "Edit distance" (fake but approximate)
-def graph_edit_distance(ast_one, ast_two):
-
-    cfg_one = build_cfg_from_ast(ast_one)
-    cfg_two = build_cfg_from_ast(ast_two)
+def graph_edit_distance(cfg_one, cfg_two):
 
     def extract_graph(dot):
         # Extract nodes (dict: node_id -> label) and edges (set of (src, dst) tuples)
