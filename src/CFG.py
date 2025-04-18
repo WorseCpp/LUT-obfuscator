@@ -1,6 +1,7 @@
 from pycparser import c_parser, c_ast, c_generator
 import graphviz
 import re
+from collections import Counter
 
 
 class CFG:
@@ -188,10 +189,8 @@ def build_cfg_from_ast(ast):
 def simplify_cfg_graph(cfg):
 
     
-    converged = False
     for _ in range(10):
-        if (converged):
-            break
+
 
         # Save a snapshot of the current graph structure.
         old_body = list(cfg.dot.body)
@@ -216,6 +215,10 @@ def simplify_cfg_graph(cfg):
                 src, dst = edge_match.groups()
                 children.setdefault(src, []).append(dst)
                 parents.setdefault(dst, []).append(src)
+
+        #print(_)
+
+        #print(sorted(list(labels.keys())))
 
         one_parent_child_nodes = []
         # Identify nodes with exactly one parent and one child.
@@ -281,7 +284,11 @@ def simplify_cfg_graph(cfg):
         for node_id, lbl in labels.items():
             if lbl.startswith("Label:"):
                 incoming = parents.get(node_id, [])
-                if not any(labels[parent].startswith("goto ") for parent in incoming):
+                
+                #if ("N59" in incoming):
+                #    print(incoming, node_id)
+
+                if not any(labels[parent].startswith("goto ") for parent in incoming if parent in labels.keys()):
                     labels_no_goto.append(node_id)
         
         for lbl in labels_no_goto:
@@ -312,8 +319,56 @@ def simplify_cfg_graph(cfg):
 
         # Check convergence by comparing the body of the dot graphs.
         if list(cfg.dot.body) == old_body:
-            converged = True
+            break
     
+    for _ in range(10):
+        old_body = list(cfg.dot.body)
+
+        # After CFG simplification converges, re-calculate parents from the final graph.
+        labels = {}
+        parents = {}
+        for line in cfg.dot.body:
+            node_match = re.match(r'\s*(\w+)\s+\[label="([^"]+)"\]', line)
+            if node_match:
+                node_id, lbl = node_match.groups()
+                labels[node_id] = lbl
+            edge_match = re.match(r'\s*(\w+)\s*->\s*(\w+)', line)
+            if edge_match:
+                src, dst = edge_match.groups()
+                parents.setdefault(dst, []).append(src)
+        # Ensure every node appears in the parents dictionary.
+        for node in labels:
+            parents.setdefault(node, [])
+        # Identify and print nodes without a parent.
+        nodes_without_parent = [node for node, par_list in parents.items() if not par_list]
+        #print("Nodes without a parent:", [labels[a] for a in nodes_without_parent])
+
+        # Remove nodes without a parent unless they are function definitions.
+        removable = []
+        # Identify nodes without a parent that are not function definitions.
+        for node in nodes_without_parent:
+            if node in labels and not labels[node].startswith("Function:"):
+                removable.append(node)
+
+        # Filter out node and edge entries associated with removable nodes.
+        new_body = []
+        for line in cfg.dot.body:
+            node_match = re.match(r'\s*(\w+)\s+\[label="([^"]+)"\]', line)
+            edge_match = re.match(r'\s*(\w+)\s*->\s*(\w+)', line)
+            if node_match:
+                node_id = node_match.group(1)
+                if node_id in removable:
+                    continue
+            if edge_match:
+                src, dst = edge_match.groups()
+                if src in removable or dst in removable:
+                    continue
+            new_body.append(line)
+        cfg.dot.body = new_body
+
+        if list(cfg.dot.body) == old_body:
+            break
+
     return cfg
 
 def gen_simplified_cfg(ast):
@@ -321,3 +376,45 @@ def gen_simplified_cfg(ast):
     cfg = build_cfg_from_ast(ast)
     # Simplify the CFG graph structure.
     return simplify_cfg_graph(cfg)
+
+# "Edit distance" (fake but approximate)
+def graph_edit_distance(ast_one, ast_two):
+
+    cfg_one = build_cfg_from_ast(ast_one)
+    cfg_two = build_cfg_from_ast(ast_two)
+
+    def extract_graph(dot):
+        # Extract nodes (dict: node_id -> label) and edges (set of (src, dst) tuples)
+        node_pattern = re.compile(r'\s*(\w+)\s+\[label="([^"]+)"\]')
+        edge_pattern = re.compile(r'\s*(\w+)\s*->\s*(\w+)')
+        nodes = {}
+        edges = set()
+        for line in dot.body:
+            node_match = node_pattern.match(line)
+            if node_match:
+                node_id, label = node_match.groups()
+                nodes[node_id] = label
+            edge_match = edge_pattern.match(line)
+            if edge_match:
+                src, dst = edge_match.groups()
+                edges.add((src, dst))
+        return nodes, edges
+
+    nodes_one, edges_one = extract_graph(cfg_one.dot)
+    nodes_two, edges_two = extract_graph(cfg_two.dot)
+
+    # Compute node edit distance by comparing node label multisets.
+    counter_one = Counter(nodes_one.values())
+    counter_two = Counter(nodes_two.values())
+    common = sum(min(counter_one[label], counter_two[label]) for label in set(counter_one) | set(counter_two))
+    node_edit_distance = (sum(counter_one.values()) + sum(counter_two.values()) - 2 * common)
+
+    # Compute edge edit distance as the absolute difference in number of edges.
+    edge_edit_distance = abs(len(edges_one) - len(edges_two))
+
+    # Return total graph edit distance.
+    return node_edit_distance + edge_edit_distance
+
+    
+
+   

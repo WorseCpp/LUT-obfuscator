@@ -283,9 +283,13 @@ def MC_mutate(ast, itr = 250):
     n_itr = 1
     generator = c_generator.CGenerator()
 
-
-    for i in tqdm(range(itr)):
+    bar = tqdm(total=itr)
+    i = 0
+    for attmp in range(100 * itr):
         
+        if (i >= itr):
+            break
+
         if (m_itr == 0):
             old_ast = copy.deepcopy(ast)
 
@@ -323,9 +327,14 @@ def MC_mutate(ast, itr = 250):
                 #print("Fail!\n")
                 ast = old_ast
                 fail_n += m_itr
+            else:
+                i += m_itr
+                bar.update(m_itr)
+
 
             m_itr = 0
-            n_itr = i / fail_n
+            n_itr = int(attmp / fail_n * .5) + 1
             
+    bar.close()
 
     return (old_ast, ast)[compile_and_test(generator.visit(ast))]

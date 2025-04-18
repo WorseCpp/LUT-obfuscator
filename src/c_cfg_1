@@ -1,48 +1,47 @@
 // Simplified CFG
 digraph {
-	N42 [label="return var_8 + 1"]
-	N11 [label="if(var_9 <= (var_6 - 1))"]
-	N41 [label="swap(&var_4[var_8 + 1], &var_4[var_6])"]
-	N37 [label="var_9++"]
-	N68 [label="End of quickSort"]
-	N7 [label="int var_8 = var_5 - 1"]
-	N31 [label="swap(&var_4[var_8], &var_4[var_9])"]
-	N44 [label="Function: quickSort"]
-	N45 [label="if(var_11 < var_12)"]
-	N62 [label="quickSort(var_10, var_13 + 1, var_12)"]
-	N61 [label="quickSort(var_10, var_11, var_13 - 1)"]
-	N5 [label="Function: partition"]
-	N15 [label="if(var_4[var_9] <= var_7)"]
-	N2 [label="*var_1 = *var_2"]
-	N6 [label="int var_7 = var_4[var_6]"]
-	N30 [label="var_8++"]
-	N0 [label="Function: swap"]
+	N27 [label="if(var_11 < var_12)"]
 	N1 [label="int var_3 = *var_1"]
-	N3 [label="*var_2 = var_3"]
-	N43 [label="End of partition"]
-	N8 [label="int var_9 = var_5"]
+	N29 [label="quickSort(var_10, var_11, var_13 - 1)"]
+	N19 [label="var_9++"]
+	N6 [label="int var_7 = var_4[var_6]"]
+	N2 [label="*var_1 = *var_2"]
+	N7 [label="int var_8 = var_5 - 1"]
+	N26 [label="Function: quickSort"]
+	N5 [label="Function: partition"]
+	N17 [label="swap(&var_4[var_8], &var_4[var_9])"]
+	N28 [label="int var_13 = partition(var_10, var_11, var_12)"]
 	N4 [label="End of swap"]
-	N60 [label="int var_13 = partition(var_10, var_11, var_12)"]
-	N11 -> N15
-	N11 -> N41
-	N41 -> N42
-	N37 -> N11
-	N7 -> N8
-	N31 -> N37
-	N44 -> N45
-	N45 -> N60
-	N45 -> N68
-	N62 -> N68
-	N61 -> N62
-	N5 -> N6
-	N15 -> N30
-	N15 -> N37
-	N2 -> N3
-	N6 -> N7
-	N30 -> N31
-	N0 -> N1
+	N3 [label="*var_2 = var_3"]
+	N32 [label="End of quickSort"]
+	N11 [label="if(var_9 <= (var_6 - 1))"]
+	N16 [label="var_8++"]
+	N30 [label="quickSort(var_10, var_13 + 1, var_12)"]
+	N24 [label="return var_8 + 1"]
+	N23 [label="swap(&var_4[var_8 + 1], &var_4[var_6])"]
+	N15 [label="if(var_4[var_9] <= var_7)"]
+	N0 [label="Function: swap"]
+	N8 [label="int var_9 = var_5"]
+	N27 -> N28
+	N27 -> N32
 	N1 -> N2
+	N29 -> N30
+	N19 -> N11
+	N6 -> N7
+	N2 -> N3
+	N7 -> N8
+	N26 -> N27
+	N5 -> N6
+	N17 -> N19
+	N28 -> N29
 	N3 -> N4
+	N11 -> N15
+	N11 -> N23
+	N16 -> N17
+	N30 -> N32
+	N23 -> N24
+	N15 -> N16
+	N15 -> N19
+	N0 -> N1
 	N8 -> N11
-	N60 -> N61
 }

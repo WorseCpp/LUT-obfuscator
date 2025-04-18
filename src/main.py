@@ -9,11 +9,7 @@ from io import StringIO
 
 
 from score_ast import *
-
-
-
-
-
+import pickle
 
 # Early applicarion of AI --> MatEng
 # Find the stat of interest; compare wrt this?
@@ -29,7 +25,9 @@ from score_ast import *
 def main():
 
     s = random.randbytes(5)
-    s = b'\x93e\x0c\xb9\xf3'
+    #s = b'\x93e\x0c\xb9\xf3'
+    #s = b'\x1e\xf8\xfdlp'
+    print(s)
     random.seed(s)
 
     init_rand_names()
@@ -97,21 +95,20 @@ def main():
     #ast = opaquify(ast)
     #show_cfg(ast)
 
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-    ast = goto_if_stmt(ast)
-
     #render_cfg(build_cfg_from_ast(ast))    
 
+    old_ast = copy.deepcopy(ast)
 
+    #render_cfg(gen_simplified_cfg(ast))    
+    ast = MC_mutate(ast, 1000)
 
-    render_cfg(gen_simplified_cfg(ast))    
+    old_cfg = simplify_cfg_graph(build_cfg_from_ast(old_ast))
+    new_cfg = simplify_cfg_graph(build_cfg_from_ast(ast))
 
-    #ast = MC_mutate(ast)
+    #render_cfg(old_cfg)
+    #render_cfg(new_cfg)
 
+    print("Edit distance:", graph_edit_distance(old_cfg, new_cfg))
 
     #render_cfg(build_cfg_from_ast(ast))
     #render_cfg(gen_simplified_cfg(ast))    
@@ -120,7 +117,9 @@ def main():
     generator = c_generator.CGenerator()
 
     code = generator.visit(ast)
-    print("Generated code;\n", code)
+    code = remove_whitespace(code)
+
+    #print("Generated code;\n", code)
 
     print(compile_c_code(code), compile_and_test(code))
     #show_cfg(ast)
