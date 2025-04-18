@@ -276,9 +276,6 @@ def MC_mutate(ast, itr = 250):
 
     fail_n = 1
 
-    ast = clean_and_preprocess(ast)
-
-
     m_itr = 0
     n_itr = 1
     generator = c_generator.CGenerator()

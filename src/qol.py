@@ -19,7 +19,9 @@ def compile_and_test(code):
     if not compile_c_code(code, False):
         return False
     
-    compile_command = ["gcc", "-O3", "-o", "out", "main.o", "code.o"]
+    fname = "out"
+
+    compile_command = ["gcc", "-O3", "-o", fname, "main.o", "code.o"]
 
     try:
         res = subprocess.run(compile_command, capture_output=True, text=True, timeout=1.0)
@@ -29,7 +31,7 @@ def compile_and_test(code):
     if res.returncode != 0:
         return False
     
-    test_cmd = ["./out"]
+    test_cmd = ["./"+fname]
     
     try:
         res = subprocess.run(test_cmd, capture_output=True, text=True, timeout=1.0)

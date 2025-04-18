@@ -20,6 +20,9 @@ class CFG:
     def add_edge(self, from_node, to_node):
         self.dot.edge(from_node, to_node)
 
+    def number_of_nodes(self):
+        return self.counter
+
 def gen_code(node):
     # Generate C code from a pycparser AST node for clearer labels.
     generator = c_generator.CGenerator()
