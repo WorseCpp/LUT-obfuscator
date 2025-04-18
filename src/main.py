@@ -70,7 +70,7 @@ def proc_edit_dist_data():
     m,b = np.polyfit(s_x, y, 1)
 
     plt.plot(s_x, y)
-    plt.plot(s_x, m*s_x+b)
+    plt.plot(s_x, m*s_x)
     plt.xlabel("sqrt(Steps)")
     plt.ylabel("CFG Edit Distance (average of 5)")
     plt.title("Simplified CFG Edit Distance vs sqrt(Steps)")
