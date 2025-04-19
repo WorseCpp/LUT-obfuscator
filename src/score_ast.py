@@ -16,7 +16,7 @@ def score(tree, org_ast):
 
     node_cut = 250
 
-    if (node_count > node_cut + 10):
-        return math.exp(10)
+    if (node_count > node_cut + 20):
+        return math.exp(20)
 
-    return math.exp((node_count - node_cut)) - graph_edit_distance(org_cfg, n_cfg)
+    return 500 + math.exp((node_count - node_cut)) - graph_edit_distance(org_cfg, n_cfg)
