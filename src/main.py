@@ -212,11 +212,11 @@ def main():
 
     #characterize_score(ast, score)
 
-    N = 100
+    N = 1
 
     n_steps = 1
 
-    r_trials = 1
+    r_trials = 10
 
     greedy_scores = []
 
