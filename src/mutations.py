@@ -272,7 +272,7 @@ def clean_and_preprocess(ast):
         ast.ext[i] = unroll_loops(ast.ext[i])
     return ast
 
-def MC_mutate(ast, itr = 250):
+def MC_mutate(ast, itr = 250, loud = True):
 
     fail_n = 1
 
@@ -280,7 +280,10 @@ def MC_mutate(ast, itr = 250):
     n_itr = 1
     generator = c_generator.CGenerator()
 
-    bar = tqdm(total=itr)
+    bar = None
+
+    if (loud ):
+        bar = tqdm(total=itr)
 
     old_ast = copy.deepcopy(ast)
 
@@ -306,13 +309,13 @@ def MC_mutate(ast, itr = 250):
             elif (mode < 20):
                 ast = dummy_operation(ast)
             elif (mode < 30):
-                if (random.random() > .5):
+                if (random.random() > .75):
                     ast = conditionalize_goto(ast)
                 else:
                     ast = inverse_conditionalize_goto(ast)
             elif (mode < 90):
                 # continue
-                f = random.choice([opaquify, remove_oqaque_clauses])
+                f = random.choice([opaquify, remove_oqaque_clauses,remove_oqaque_clauses,remove_oqaque_clauses])
                 ast = f(ast)
             else:
                 # continue
@@ -328,13 +331,90 @@ def MC_mutate(ast, itr = 250):
                 ast = old_ast
                 fail_n += m_itr
             else:
+                
                 i += m_itr
-                bar.update(m_itr)
+                
+                if (loud ):
+                    bar.update(m_itr)
 
 
             m_itr = 0
             n_itr = int(attmp / fail_n * .5) + 1
+
+    if (loud ):
+        bar.close()
+
+    return (old_ast, ast)[compile_and_test(generator.visit(ast))]
+
+def mutate_vector_style(ast, itr = 250, loud = True, opt_vector = [1,0,0,0,0,0,0,0]):
+
+    fail_n = 1
+
+    m_itr = 0
+    n_itr = 1
+    generator = c_generator.CGenerator()
+
+    bar = None
+
+    if (loud ):
+        bar = tqdm(total=itr)
+
+    old_ast = copy.deepcopy(ast)
+
+    i = 0
+    for attmp in range(100 * itr):
+        
+        if (i >= itr):
+            break
+
+        if (m_itr == 0):
+            old_ast = copy.deepcopy(ast)
+
+        if (m_itr < n_itr):
+
+            mode = random.randint(0, 100)
+
+            if (opt_vector[0]):
+                # continue
+                ast = globalize_local(ast)
+            elif (opt_vector[1]):
+                # is own inverse
+                ast = mutate_variable(ast)
+            elif (opt_vector[2]):
+                ast = dummy_operation(ast)
+            elif (opt_vector[3]):
+                ast = conditionalize_goto(ast)
+            elif (opt_vector[4]):
+                ast = inverse_conditionalize_goto(ast)
+            elif (opt_vector[5]):
+                ast = opaquify(ast)
+            elif (opt_vector[6]):
+                ast = remove_oqaque_clauses(ast)
+            else:
+                # continue
+                ast = goto_if_stmt(ast)
+
+            m_itr += 1
             
-    bar.close()
+        else:
+
+            code = generator.visit(ast)
+            if (not compile_and_test(code)):
+                #print("Fail!\n")
+                ast = old_ast
+                fail_n += m_itr
+            else:
+                
+                i += m_itr
+                
+                if (loud ):
+                    bar.update(m_itr)
+
+
+            m_itr = 0
+            n_itr = int(attmp / fail_n * .5) + 1
+
+    if (loud ):
+        bar.close()
 
     return (old_ast, ast)[compile_and_test(generator.visit(ast))]
