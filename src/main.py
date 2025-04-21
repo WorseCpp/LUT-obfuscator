@@ -160,7 +160,7 @@ def grad_optimization(ast, iterations=100, steps = 10):
 
         best_cand = min(cands, key=lambda k : k[1])
 
-        if (best_cand[1] < best_score):
+        if (best_cand[1] <= best_score):
             current_ast = best_cand[0]
             best_score = best_cand[1]
         
@@ -212,7 +212,7 @@ def main():
 
     #characterize_score(ast, score)
 
-    N = 1
+    N = 1000
 
     n_steps = 1
 
