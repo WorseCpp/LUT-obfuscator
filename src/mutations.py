@@ -418,3 +418,5 @@ def mutate_vector_style(ast, itr = 250, loud = True, opt_vector = [1,0,0,0,0,0,0
         bar.close()
 
     return (old_ast, ast)[compile_and_test(generator.visit(ast))]
+
+

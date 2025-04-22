@@ -4,7 +4,7 @@ name_dict = []
 def compile_c_code(code, v = True):
 
     open("code.c","w+").write(code)
-    compile_command = ["gcc", "-O3", "-c", "code.c"]
+    compile_command = ["gcc", "-c", "code.c"]
     result = subprocess.run(compile_command, capture_output=True, text=True)
     if result.returncode != 0:
         if (v):
@@ -21,7 +21,7 @@ def compile_and_test(code):
     
     fname = "out"
 
-    compile_command = ["gcc", "-O3", "-o", fname, "main.o", "code.o"]
+    compile_command = ["gcc", "-o", fname, "main.o", "code.o"]
 
     try:
         res = subprocess.run(compile_command, capture_output=True, text=True, timeout=1.0)
@@ -60,7 +60,7 @@ def get_img_name():
 
 def render_cfg(cfg):
     # Render and view the CFG as a PNG image.
-    cfg.dot.render(get_img_name(), format="png", view=True)
+    cfg.dot.render(get_img_name(), format="png", view=False)
 
 
 def show_cfg(ast):

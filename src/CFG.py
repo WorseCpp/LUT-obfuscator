@@ -161,6 +161,7 @@ def process_for(for_node, cfg):
     
     exit_node = cfg.new_node("exit for")
     cfg.add_edge(decision, exit_node)
+
 def build_cfg_from_func(func_def, cfg):
     # Build the CFG for a function definition.
     entry = cfg.new_node("Function: " + func_def.decl.name)
@@ -190,7 +191,6 @@ def build_cfg_from_ast(ast):
 
 
 def simplify_cfg_graph(cfg):
-
     
     for _ in range(10):
 
@@ -416,5 +416,3 @@ def graph_edit_distance(cfg_one, cfg_two):
     return node_edit_distance + edge_edit_distance
 
     
-
-   

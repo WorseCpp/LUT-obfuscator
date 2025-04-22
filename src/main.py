@@ -1,3 +1,4 @@
+from matplotlib.pyplot import hot
 from mutations import *
 
 import copy
@@ -157,8 +158,11 @@ def grad_optimization(ast, iterations=100, steps = 10):
             cands.append((candidate, candidate_score))
 
 
-
         best_cand = min(cands, key=lambda k : k[1])
+
+        for i in range(len(hot_vector)):
+            if (cands[i] == best_cand):
+                print(i)
 
         if (best_cand[1] <= best_score):
             current_ast = best_cand[0]
@@ -179,15 +183,19 @@ mc_scores = [500.0, 498.0, 494.0, 484.0, 482.0, 480.0, 476.0, 474.0, 474.0, 474.
 
 def avg_runs(ast, f, N=100, n_steps=1, r_trials=1, **kwargs):
     gradient_scores = []
+    best_ast = copy.deepcopy(ast)
     for i in range(r_trials):
         best_ast, grad_score, grad_scores = f(copy.deepcopy(ast), N, n_steps, **kwargs)
         gradient_scores.append(grad_scores)
     gradient_scores = np.array(gradient_scores)
     gradient_scores = [np.mean(gradient_scores[:, i]) for i in range(len(gradient_scores[0]))]
-    return gradient_scores
+
+    return gradient_scores, best_ast
 
 def main():
+    generator = c_generator.CGenerator()
     s = "0x" + random.randbytes(5).hex()
+    #s = "0xaecccecdab"
     #s = b'\x93e\x0c\xb9\xf3'
     #s = b'\x1e\xf8\xfdlp'
     print(s)
@@ -209,49 +217,48 @@ def main():
 
     ast = clean_and_preprocess(ast)
 
-    #ast = opaquify(ast)
-    #show_cfg(ast)
-
-    #render_cfg(build_cfg_from_ast(ast))    
-
-    #old_ast = copy.deepcopy(ast)
-    #autocorr_graph_edit_distance(ast)
-
-    #ast = MC_mutate(ast, 1000)
-
-    #characterize_score(ast, score)
-
-    N = 10
+    N = 1000
 
     n_steps = 1
 
     r_trials = 1
 
-    greedy_scores = avg_runs(ast, greedy, N, n_steps, r_trials)
+    #greedy_scores, greedy_best_ast = avg_runs(ast, greedy, N, n_steps, r_trials)
+    #plt.plot(np.linspace(0, len(greedy_scores), len(greedy_scores)), greedy_scores, label=f"Greedy")
 
-    plt.plot(np.linspace(0, len(greedy_scores), len(greedy_scores)), greedy_scores, label=f"Greedy")
-
-    gradient_scores = avg_runs(ast, grad_optimization, N, n_steps, r_trials)
+    gradient_scores, grad_best_ast = avg_runs(ast, grad_optimization, N, n_steps, r_trials)
 
     plt.plot(np.linspace(0, len(gradient_scores), len(gradient_scores)), gradient_scores, label=f"Gradient")
 
     t_int = 1.0
-    t_dec = .95
-    simanneal_scores = avg_runs(ast, simulated_annealing_optimize, N, n_steps, r_trials, temp_initial=t_int, temp_decay=t_dec)
+    t_dec = round((.001)**(1 / (N)), 3)
 
+    simanneal_scores, sa_best_ast = avg_runs(ast, simulated_annealing_optimize, N, n_steps, r_trials, temp_initial=t_int, temp_decay=t_dec)
 
     plt.plot(np.linspace(0, len(simanneal_scores), len(simanneal_scores)), simanneal_scores, label=f"SA scores (T0 = {t_int}, td = {t_dec})")
     
+    filename = datetime.datetime.now().strftime("best_asts_%Y%m%d_%H%M%S.c")
+
+    with open(filename, "w+") as f:
+        # f.write("greedy_best_ast")
+        # f.write(generator.visit(greedy_best_ast))
+        f.write("grad_best_ast\n")
+        f.write(generator.visit(grad_best_ast))
+        f.write("sa_best_ast\n")
+        f.write(generator.visit(sa_best_ast))
+    print("ASTs saved to best_asts.pkl")
 
     # Generate a filename with current datetime.
     filename = datetime.datetime.now().strftime("scores_%Y%m%d_%H%M%S.pkl")
+    
     # Prepare a dict with the scores.
     all_scores = {
-        "g_scores": greedy_scores,
+        #"g_scores": greedy_scores,
         "mc_scores": mc_scores,
         "sa_scores": simanneal_scores,  # using the averaged SA scores
         "sa_settings":{"t_int":t_int, "t_dec":t_dec}
     }
+
     # Save the scores using pickle.
     with open(filename, "wb") as f:
         pickle.dump(all_scores, f)
@@ -267,8 +274,6 @@ def main():
     #characterize_edit_dist(ast)
 
 
-
-    generator = c_generator.CGenerator()
 
     # code = generator.visit(best_ast)
     # code = remove_whitespace(code)

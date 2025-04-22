@@ -1,50 +1,47 @@
 // Simplified CFG
 digraph {
-	N38 [label="if((var_11 < var_12)  ||  0)"]
-	N41 [label="quickSort(var_10, var_13 + 1, var_12)"]
-	N1 [label="int var_3 = *var_1"]
-	N19 [label="var_9++"]
-	N40 [label="quickSort(var_10, var_11, var_13 - 1)"]
-	N34 [label="swap(&var_4[var_8 + 1], &var_4[var_6])"]
-	N6 [label="int var_7 = var_4[var_6]"]
-	N2 [label="*var_1 = (*var_2) + ((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) % 3)"]
-	N7 [label="int var_8 = var_5 - 1"]
-	N43 [label="End of quickSort"]
-	N5 [label="Function: partition"]
-	N17 [label="swap(&var_4[var_8], &var_4[var_9])"]
-	N37 [label="Function: quickSort"]
-	N4 [label="End of swap"]
-	N3 [label="*var_2 = var_3"]
-	N11 [label="if(var_9 <= (var_6 - 1))"]
-	N16 [label="var_8++"]
-	N20 [label="if(1)"]
-	N35 [label="return var_8 + 1"]
-	N39 [label="int var_13 = partition(var_10, var_11, var_12)"]
-	N15 [label="if(var_4[var_9] <= var_7)"]
-	N0 [label="Function: swap"]
 	N8 [label="int var_9 = var_5"]
-	N38 -> N39
-	N38 -> N43
-	N41 -> N43
+	N32 [label="End of quickSort"]
+	N0 [label="Function: swap"]
+	N1 [label="var_3 = (*var_1) + ((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) % 3)"]
+	N30 [label="quickSort(var_10, var_13 + 1, var_12)"]
+	N2 [label="*var_1 = (*var_2) + (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4)"]
+	N24 [label="return var_8 + 1"]
+	N27 [label="if(var_11 < var_12)"]
+	N17 [label="swap(&var_4[var_8], &var_4[var_9])"]
+	N5 [label="Function: partition"]
+	N29 [label="quickSort(var_10, var_11, var_13 - 1)"]
+	N11 [label="if(var_9 <= (var_6 - 1))"]
+	N4 [label="End of swap"]
+	N7 [label="int var_8 = (var_5 - 1)  +  (((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) % 4)"]
+	N23 [label="swap(&var_4[var_8 + 1], &var_4[var_6])"]
+	N28 [label="int var_13 = partition(var_10, var_11, var_12)"]
+	N6 [label="var_7 = var_4[var_6]"]
+	N3 [label="*var_2 = var_3"]
+	N15 [label="if((var_4[var_9] <= var_7)  ||  ((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) % 3))"]
+	N16 [label="var_8++"]
+	N19 [label="var_9++"]
+	N26 [label="Function: quickSort"]
+	N8 -> N11
+	N0 -> N1
 	N1 -> N2
-	N19 -> N20
-	N40 -> N41
-	N34 -> N35
-	N6 -> N7
+	N30 -> N32
 	N2 -> N3
-	N7 -> N8
-	N5 -> N6
+	N27 -> N28
+	N27 -> N32
 	N17 -> N19
-	N37 -> N38
-	N3 -> N4
+	N5 -> N6
+	N29 -> N30
 	N11 -> N15
-	N11 -> N34
-	N16 -> N17
-	N20 -> N11
-	N20 -> N34
-	N39 -> N40
+	N11 -> N23
+	N7 -> N8
+	N23 -> N24
+	N28 -> N29
+	N6 -> N7
+	N3 -> N4
 	N15 -> N16
 	N15 -> N19
-	N0 -> N1
-	N8 -> N11
+	N16 -> N17
+	N19 -> N11
+	N26 -> N27
 }
