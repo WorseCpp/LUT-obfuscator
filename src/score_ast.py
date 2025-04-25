@@ -4,6 +4,7 @@ import ast
 from CFG import *
 
 import math
+import re
 
 def simplify_ast(ast):
     # Recursively process AST nodes to replace if(1) with their true branch
@@ -86,3 +87,22 @@ def score(tree, org_ast):
         return math.exp(20)
 
     return 500 + math.exp((node_count - node_cut)) - graph_edit_distance(org_cfg, n_cfg)    
+
+def score_complexity(tree, org_ast):
+    generator = c_generator.CGenerator()
+    code = generator.visit(tree)
+    open("code.c","w+").write(code)
+    score_command = ["complexity", "--score", "--thresh=1", "code.c"]
+    result = subprocess.run(score_command, capture_output=True, text=True)
+    out = 0
+    for line in result.stdout.split("\n"):
+        stripped = line.lstrip()
+        if stripped and not stripped[0].isdigit():
+            continue
+        match = re.search(r'\d+', line)
+        if match:
+            out += int(match.group(0))
+        else:
+            pass
+
+    return -out + 100000 * (len(code) > 100 * 250)

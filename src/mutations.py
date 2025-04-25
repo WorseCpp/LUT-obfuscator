@@ -298,22 +298,22 @@ def MC_mutate(ast, itr = 250, loud = True):
 
         if (m_itr < n_itr):
 
-            mode = random.randint(0, 100)
+            mode = random.randint(0, 60)
 
             if (mode < 10):
                 # continue
                 ast = globalize_local(ast)
-            elif (mode < 10):
+            elif (mode < 20):
                 # is own inverse
                 ast = mutate_variable(ast)
-            elif (mode < 20):
-                ast = dummy_operation(ast)
             elif (mode < 30):
+                ast = dummy_operation(ast)
+            elif (mode < 40):
                 if (random.random() > .75):
                     ast = conditionalize_goto(ast)
                 else:
                     ast = inverse_conditionalize_goto(ast)
-            elif (mode < 90):
+            elif (mode < 50):
                 # continue
                 f = random.choice([opaquify, remove_oqaque_clauses,remove_oqaque_clauses,remove_oqaque_clauses])
                 ast = f(ast)

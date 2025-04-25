@@ -1,40 +1,125 @@
-int var_7;
+grad_best_ast
 int var_9;
-int long var_3;
+int var_7;
+int var_8;
+int var_3;
+void swap(int *var_1, int *var_2)
+{
+  var_3 = ((((((*var_1) + ((((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) * (var_3 + 4)) % 5)) + ((((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) * (var_8 + 4)) % 5)) + (((var_8 * var_8) * (var_8 + 1)) % 2)) + (((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) % 4)) + (((var_9 * var_9) * (var_9 + 1)) % 2)) + ((((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) * (var_3 + 4)) % 5);
+  *var_1 = ((*var_2) + ((((((var_9 * var_9) * (var_9 + 1)) * (var_9 + 2)) * (var_9 + 3)) * (var_9 + 4)) % 5)) + ((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) % 3);
+  *var_2 = ((var_3 + ((((((var_7 * var_7) * (var_7 + 1)) * (var_7 + 2)) * (var_7 + 3)) * (var_7 + 4)) % 5)) + ((((var_7 * var_7) * (var_7 + 1)) * (var_7 + 2)) % 3)) + (((((var_9 * var_9) * (var_9 + 1)) * (var_9 + 2)) * (var_9 + 3)) % 4);
+}
+
+int partition(int var_4[], int var_5, int var_6)
+{
+  var_7 = var_4[var_6];
+  var_8 = (var_5 - 1) + ((((((var_9 * var_9) * (var_9 + 1)) * (var_9 + 2)) * (var_9 + 3)) * (var_9 + 4)) % 5);
+  var_9 = ((var_5 + ((((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) * (var_8 + 4)) % 5)) + (((((var_7 * var_7) * (var_7 + 1)) * (var_7 + 2)) * (var_7 + 3)) % 4)) + ((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) % 3);
+  molybdite:
+  {
+  }
+
+  if (var_9 <= (var_6 - 1))
+  {
+    goto unbolden;
+  }
+  else
+  {
+    goto opificer;
+  }
+  unbolden:
+  {
+  }
+
+  goto pacts;
+  opificer:
+  {
+  }
+
+  goto feds;
+  pacts:
+  {
+  }
+
+  if (((((((var_4[var_9] <= var_7)  ||  (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4))  ||  (((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) % 4))  ||  (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4))  ||  (((((var_7 * var_7) * (var_7 + 1)) * (var_7 + 2)) * (var_7 + 3)) % 4))  ||  (((var_7 * var_7) * (var_7 + 1)) % 2))  ||  (((var_8 * var_8) * (var_8 + 1)) % 2))
+  {
+    goto bossdom;
+  }
+  else
+  {
+    goto bodywear;
+  }
+  bossdom:
+  {
+  }
+
+  var_8++;
+  swap(&var_4[var_8], &var_4[var_9]);
+  goto hepatise;
+  bodywear:
+  {
+  }
+
+  hepatise:
+  {
+  }
+
+  var_9++;
+  if ((1  ||  ((((((var_7 * var_7) * (var_7 + 1)) * (var_7 + 2)) * (var_7 + 3)) * (var_7 + 4)) % 5))  ||  ((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) % 3))
+  {
+    goto frazing;
+  }
+  else
+  {
+    goto symphoricarpos;
+  }
+  frazing:
+  {
+  }
+
+  goto molybdite;
+  goto didromies;
+  symphoricarpos:
+  {
+  }
+
+  didromies:
+  {
+  }
+
+  feds:
+  {
+  }
+
+  swap(&var_4[var_8 + 1], &var_4[var_6]);
+  return var_8 + 1;
+}
+
+void quickSort(int var_10[], int var_11, int var_12)
+{
+  if ((((((var_11 < var_12)  ||  (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4))  ||  ((((var_9 * var_9) * (var_9 + 1)) * (var_9 + 2)) % 3))  ||  (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4))  ||  (((var_9 * var_9) * (var_9 + 1)) % 2))  ||  (((((var_7 * var_7) * (var_7 + 1)) * (var_7 + 2)) * (var_7 + 3)) % 4))
+  {
+    int var_13 = ((partition(var_10, var_11, var_12)  +  ((((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) * (var_8 + 4)) % 5))  +  (((var_7 * var_7) * (var_7 + 1)) % 2))  +  ((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) % 3);
+    quickSort(var_10, var_11, var_13 - 1);
+    quickSort(var_10, var_13 + 1, var_12);
+  }
+  var_3 = (42 + ((((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) * (var_8 + 4)) % 5)) + (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4);
+}
+
+sa_best_ast
+int long var_7;
+int unsigned var_9;
+int unsigned var_3;
 int var_8;
 int var_13;
 void swap(int *var_1, int *var_2)
 {
   var_3 = *var_1;
   *var_1 = (*var_2) + ((((((var_13 * var_13) * (var_13 + 1)) * (var_13 + 2)) * (var_13 + 3)) * (var_13 + 4)) % 5);
-  var_13 = 42;
   *var_2 = var_3 + (((var_8 * var_8) * (var_8 + 1)) % 2);
-  var_13 = 42;
-  var_13 = 42;
   var_13 = 42 + (((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) % 4);
-  var_13 = 42;
-  var_3 = 42;
-  var_3 = 42;
-  var_13 = 42;
-  var_13 = 42;
-  var_13 = 42;
-  var_3 = 42;
   var_13 = 42 + (((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) % 4);
-  var_13 = 42;
-  var_13 = 42;
-  var_3 = 42;
-  var_13 = 42;
-  var_13 = 42;
-  var_13 = 42;
-  var_13 = 42;
-  var_13 = 42;
-  var_3 = 42;
   var_3 = 42 + (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4);
-  var_3 = 42;
-  var_13 = 42;
-  var_3 = 42;
-  var_13 = 42;
-  var_13 = 42;
 }
 
 int partition(int var_4[], int var_5, int var_6)
@@ -239,7 +324,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto conusor;
-  var_7 = 42;
   goto resorbed;
   unca:
   {
@@ -260,7 +344,6 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_3 = 42;
   goto zygote;
   complotting:
   {
@@ -347,7 +430,6 @@ int partition(int var_4[], int var_5, int var_6)
 
   goto megadeaths;
   goto encouraging;
-  var_13 = 42;
   demisovereign:
   {
   }
@@ -362,7 +444,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto orography;
-  var_8 = 42;
   goto knobbling;
   irrestrainably:
   {
@@ -379,7 +460,6 @@ int partition(int var_4[], int var_5, int var_6)
 
   goto literateness;
   goto unspinnable;
-  var_13 = 42;
   descendence:
   {
   }
@@ -415,7 +495,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto befuddles;
-  var_13 = 42;
   babel:
   {
   }
@@ -431,8 +510,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto teleosteous;
-  var_3 = 42;
-  var_8 = 42;
   elatrometer:
   {
   }
@@ -478,12 +555,10 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto quarriable;
-  var_8 = 42;
   monogrammatic:
   {
   }
 
-  var_13 = 42;
   scarting:
   {
   }
@@ -529,13 +604,11 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_8 = 42;
   opisthodome:
   {
   }
 
   goto strown;
-  var_8 = 42;
   goto hurtlessly;
   isovaleric:
   {
@@ -553,7 +626,6 @@ int partition(int var_4[], int var_5, int var_6)
 
   goto borable;
   goto potterer;
-  var_3 = 42;
   wrencher:
   {
   }
@@ -599,13 +671,11 @@ int partition(int var_4[], int var_5, int var_6)
 
   goto spinibulbar;
   goto uneconomizing;
-  var_8 = 42;
   intertissued:
   {
   }
 
   goto madweed;
-  var_3 = 42;
   uneconomizing:
   {
   }
@@ -615,7 +685,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto metronymy;
-  var_3 = 42;
   goto competingly;
   madweed:
   {
@@ -626,12 +695,10 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_13 = 42;
   metronymy:
   {
   }
 
-  var_3 = 42;
   goto mehelya;
   goto leporine;
   furnacemen:
@@ -643,7 +710,6 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_9 = 42;
   mehelya:
   {
   }
@@ -664,9 +730,7 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto titanias;
-  var_3 = 42;
   goto nonappeasable;
-  var_8 = 42;
   implications:
   {
   }
@@ -682,7 +746,6 @@ int partition(int var_4[], int var_5, int var_6)
 
   goto monde;
   goto inferiors;
-  var_13 = 42;
   parecy:
   {
   }
@@ -692,22 +755,17 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_9 = 42;
   monde:
   {
   }
 
   goto vowels;
-  var_3 = 42;
   goto storyboard;
-  var_3 = 42;
   peccary:
   {
   }
 
   goto known;
-  var_8 = 42;
-  var_7 = 42;
   storyboard:
   {
   }
@@ -727,8 +785,6 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_13 = 42;
-  var_7 = 42;
   preferments:
   {
   }
@@ -770,12 +826,10 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_8 = 42;
   tiptop:
   {
   }
 
-  var_9 = 42;
   goto patrological;
   goto enjeopardy;
   dissipating:
@@ -795,15 +849,12 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto hepatize;
-  var_3 = 42;
   goto exploitable;
-  var_13 = 42;
   patrological:
   {
   }
 
   goto inculpableness;
-  var_3 = 42;
   var_13 = 42 + (((var_9 * var_9) * (var_9 + 1)) % 2);
   exploitable:
   {
@@ -824,7 +875,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto feds;
-  var_13 = 42;
   goto contemplates;
   contemplates:
   {
@@ -844,9 +894,7 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_9 = 42;
   goto euphemising;
-  var_8 = 42;
   goto wheezers;
   exists:
   {
@@ -856,21 +904,14 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_7 = 42;
   sailed:
   {
   }
 
-  var_9 = 42;
-  var_8 = 42;
   euphemising:
   {
   }
 
-  var_8 = 42;
-  var_8 = 42;
-  var_9 = 42;
-  var_3 = 42;
   molosse:
   {
   }
@@ -963,7 +1004,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto sedan;
-  var_3 = 42;
   goto vizored;
   undrafted:
   {
@@ -1120,7 +1160,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto midis;
-  var_9 = 42;
   mechanoreception:
   {
   }
@@ -1129,10 +1168,8 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_13 = 42;
   goto mockage;
   goto taxiarch;
-  var_13 = 42;
   midis:
   {
   }
@@ -1153,7 +1190,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto turbiniform;
-  var_3 = 42;
   dannemorite:
   {
   }
@@ -1223,7 +1259,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto atik;
-  var_7 = 42;
   goto hetter;
   regalement:
   {
@@ -1269,7 +1304,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto mehrdad;
-  var_9 = 42;
   goto anisocotyly;
   springerle:
   {
@@ -1285,8 +1319,6 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   goto rummies;
-  var_7 = 42;
-  var_8 = 42;
   goto barrelage;
   dosimetries:
   {
@@ -1301,11 +1333,9 @@ int partition(int var_4[], int var_5, int var_6)
   {
   }
 
-  var_3 = 42;
   var_8++;
   swap(&var_4[var_8], &var_4[var_9]);
   goto compromitting;
-  var_7 = 42;
   mesoscutal:
   {
   }
@@ -1322,13 +1352,10 @@ int partition(int var_4[], int var_5, int var_6)
 
   goto molybdite;
   goto cacidrosis;
-  var_9 = 42;
-  var_9 = 42;
   bihamate:
   {
   }
 
-  var_7 = 42;
   cacidrosis:
   {
   }
@@ -1338,14 +1365,11 @@ int partition(int var_4[], int var_5, int var_6)
   }
 
   swap(&var_4[var_8 + 1], &var_4[var_6]);
-  var_7 = 42;
-  var_13 = 42;
   return var_8 + 1;
 }
 
 void quickSort(int var_10[], int var_11, int var_12)
 {
-  var_3 = 42;
   if (var_11 < var_12)
   {
     goto superornamentally;
@@ -1474,7 +1498,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_8 = 42;
   peg:
   {
   }
@@ -1501,7 +1524,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   }
 
   goto dioptrically;
-  var_9 = 42;
   craal:
   {
   }
@@ -1637,7 +1659,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   }
 
   goto buffoon;
-  var_8 = 42;
   cremasteric:
   {
   }
@@ -1810,7 +1831,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_8 = 42;
   goto dackered;
   goto lampadephore;
   acronymize:
@@ -1938,8 +1958,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_8 = 42;
-  var_7 = 42;
   goto sulfamate;
   dewclaws:
   {
@@ -1956,7 +1974,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   }
 
   goto nosethirl;
-  var_13 = 42;
   testicles:
   {
   }
@@ -1966,7 +1983,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   }
 
   goto flusterate;
-  var_7 = 42;
   goto sutorious;
   nosethirl:
   {
@@ -2026,7 +2042,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_3 = 42;
   goto pronely;
   goto scrummaged;
   nulliporous:
@@ -2042,10 +2057,8 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_13 = 42;
   goto incompassionate;
   goto senescency;
-  var_8 = 42;
   bepale:
   {
   }
@@ -2119,10 +2132,7 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_3 = 42;
   goto pentatone;
-  var_3 = 42;
-  var_7 = 42;
   goto oughts;
   confessionaries:
   {
@@ -2142,7 +2152,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_13 = 42;
   goto chupatti;
   goto misrealize;
   nomarthral:
@@ -2242,14 +2251,12 @@ void quickSort(int var_10[], int var_11, int var_12)
   }
 
   goto mesonychidae;
-  var_13 = 42;
   goto volatilising;
   vaccinoid:
   {
   }
 
   goto retranslations;
-  var_13 = 42;
   volatilising:
   {
   }
@@ -2260,12 +2267,10 @@ void quickSort(int var_10[], int var_11, int var_12)
 
   goto abacli;
   goto interlinguist;
-  var_9 = 42;
   retranslations:
   {
   }
 
-  var_9 = 42;
   goto ratines;
   interlinguist:
   {
@@ -2395,16 +2400,13 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_7 = 42;
   goto receptionist;
   goto postnate;
-  var_13 = 42;
   dogget:
   {
   }
 
   goto exaggeratedness;
-  var_8 = 42;
   postnate:
   {
   }
@@ -2434,9 +2436,7 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_7 = 42;
   goto stripteuse;
-  var_9 = 42;
   prodd:
   {
   }
@@ -2468,7 +2468,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   }
 
   goto cardiaplegia;
-  var_13 = 42;
   unreached:
   {
   }
@@ -2477,10 +2476,8 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_3 = 42;
   var_3 = 42 + (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4);
   goto turwar;
-  var_7 = 42;
   goto counterembattled;
   cardiaplegia:
   {
@@ -2491,7 +2488,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_9 = 42;
   turwar:
   {
   }
@@ -2507,7 +2503,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_9 = 42;
   joypopped:
   {
   }
@@ -2542,7 +2537,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_9 = 42;
   goto periodontium;
   goto pseudolobar;
   pseudolobar:
@@ -2574,7 +2568,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_9 = 42;
   unprofiting:
   {
   }
@@ -2595,8 +2588,6 @@ void quickSort(int var_10[], int var_11, int var_12)
 
   goto unpremeditated;
   goto untidal;
-  var_9 = 42;
-  var_9 = 42;
   kitmudgar:
   {
   }
@@ -2605,7 +2596,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_13 = 42;
   goto unseam;
   neocyte:
   {
@@ -2622,7 +2612,6 @@ void quickSort(int var_10[], int var_11, int var_12)
 
   goto meatmen;
   goto hanky;
-  var_8 = 42;
   embosomed:
   {
   }
@@ -2642,7 +2631,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_9 = 42;
   var_9 = (42 + ((((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) * (var_3 + 4)) % 5)) + ((((var_13 * var_13) * (var_13 + 1)) * (var_13 + 2)) % 3);
   goto churchiest;
   battlefields:
@@ -2654,15 +2642,12 @@ void quickSort(int var_10[], int var_11, int var_12)
   }
 
   goto entre;
-  var_13 = 42;
   entre:
   {
   }
 
   goto villache;
   goto gradientia;
-  var_9 = 42;
-  var_13 = 42;
   hydroquinone:
   {
   }
@@ -2671,7 +2656,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_7 = 42;
   goto sulea;
   var_3 = 42 + (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4);
   churchiest:
@@ -2687,7 +2671,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_7 = 42;
   goto nonrepetitious;
   goto theodidact;
   theodidact:
@@ -2724,7 +2707,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_7 = 42;
   goto alibied;
   goto defial;
   changa:
@@ -2755,7 +2737,6 @@ void quickSort(int var_10[], int var_11, int var_12)
   }
 
   goto spectrograms;
-  var_13 = 42;
   convertism:
   {
   }
@@ -2764,17 +2745,10 @@ void quickSort(int var_10[], int var_11, int var_12)
   {
   }
 
-  var_9 = 42;
   var_13 = (partition(var_10, var_11, var_12) + (((((var_13 * var_13) * (var_13 + 1)) * (var_13 + 2)) * (var_13 + 3)) % 4)) + ((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) % 3);
-  var_3 = 42;
-  var_7 = 42;
   quickSort(var_10, var_11, var_13 - 1);
-  var_7 = 42;
-  var_8 = 42;
-  var_3 = 42;
   var_8 = 42 + (((var_13 * var_13) * (var_13 + 1)) % 2);
   quickSort(var_10, var_13 + 1, var_12);
-  var_3 = 42;
   goto cowroid;
   spectrograms:
   {
