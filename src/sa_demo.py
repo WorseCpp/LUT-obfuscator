@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
+n = 2.5
+
 def simulated_annealing(func, x0, T, alpha, n_iterations):
     best = x0
     current = x0
@@ -10,7 +12,8 @@ def simulated_annealing(func, x0, T, alpha, n_iterations):
 
     for i in range(n_iterations):
         # Generate a neighbor by random perturbation
-        candidate = current + np.random.normal(0, .5)
+        global n
+        candidate = current + np.random.normal(0, n)
         candidate_cost = func(candidate)
         current_cost = func(current)
         delta_cost = candidate_cost - current_cost
@@ -37,9 +40,12 @@ def objective(x):
 np.random.seed(42)
 def gradient_descent(func, grad, x0, learning_rate, n_iterations):
     x = x0
+
     history = [x]
     for i in range(n_iterations):
-        x = x - learning_rate * grad(x)
+        candidate = x + np.random.normal(0, n)
+        if (func(candidate) < func(x)):
+            x = candidate
         history.append(x)
     best = x
     best_cost = func(x)
@@ -55,8 +61,8 @@ learning_rate = 0.001
 iterations = 1000
 
 best_solution, best_value, g_history = gradient_descent(objective, grad_objective, x0, learning_rate, iterations)
-T_initial = 1.0
-cooling_rate = 0.999
+T_initial = 1.0e1
+cooling_rate = 0.99
 iterations = 1000
 
 best_solution, best_value, history = simulated_annealing(
@@ -65,10 +71,10 @@ best_solution, best_value, history = simulated_annealing(
 
 fig, ax = plt.subplots()
 x_n = np.linspace(-5, 5, 1000)
-ax.set_title("Simulated Annealing vs Gradient Descent")
+ax.set_title("Simulated Annealing vs Greedy")
 
 sascat = ax.scatter(np.array([x0]), np.array([objective(x0)]), c="r", s=20, label=f'Current Point (Simulated Annealing, T = {T_initial})')
-gscat = ax.scatter(np.array([x0]), np.array([objective(x0)]), c="black", s=20, label=f'Current Point (Gradient)')
+gscat = ax.scatter(np.array([x0]), np.array([objective(x0)]), c="black", s=20, label=f'Current Point (Greedy)')
 line2 = ax.plot(x_n, objective(x_n), label=f'Cost Function')[0]
 ax.set(xlim=[-5, 5], ylim=[-20, 20], xlabel='X', ylabel='Cost')
 ax.legend()
@@ -89,5 +95,8 @@ def update(frame):
     return (sascat, gscat, line2)
 
 
-ani = animation.FuncAnimation(fig=fig, func=update, frames=1000, interval=10)
-plt.show()
+ani = animation.FuncAnimation(fig=fig, func=update, frames=500, interval=10)
+ani.save("simulation.gif", writer="pillow", fps=30)
+#plt.show()
+plt.close()
+    

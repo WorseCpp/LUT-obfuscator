@@ -1,54 +1,47 @@
 // Simplified CFG
 digraph {
-	N7 [label="End of swap"]
-	N9 [label="var_7 = var_4[var_6]"]
-	N2 [label="*var_1 = (*var_2) + ((((((var_13 * var_13) * (var_13 + 1)) * (var_13 + 2)) * (var_13 + 3)) * (var_13 + 4)) % 5)"]
-	N8 [label="Function: partition"]
-	N6 [label="var_3 = 42 + (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4)"]
-	N483 [label="if(var_4[var_9] <= var_7)"]
 	N1 [label="var_3 = *var_1"]
-	N10 [label="var_8 = var_5 - 1"]
-	N1510 [label="var_9 = (42 + ((((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) * (var_3 + 4)) % 5)) + ((((var_13 * var_13) * (var_13 + 1)) * (var_13 + 2)) % 3)"]
-	N732 [label="var_8++"]
-	N752 [label="return var_8 + 1"]
-	N4 [label="var_13 = 42 + (((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) % 4)"]
-	N1587 [label="End of quickSort"]
-	N303 [label="var_7 = 42 + (((var_3 * var_3) * (var_3 + 1)) % 2)"]
-	N739 [label="var_9++"]
-	N415 [label="var_9 = 42 + (((var_9 * var_9) * (var_9 + 1)) % 2)"]
-	N1356 [label="var_3 = 42 + (((var_7 * var_7) * (var_7 + 1)) % 2)"]
-	N3 [label="*var_2 = var_3 + (((var_8 * var_8) * (var_8 + 1)) % 2)"]
-	N754 [label="Function: quickSort"]
-	N751 [label="swap(&var_4[var_8 + 1], &var_4[var_6])"]
-	N755 [label="if(var_11 < var_12)"]
-	N14 [label="if((var_9 <= (var_6 - 1))  ||  (((var_9 * var_9) * (var_9 + 1)) % 2))"]
-	N733 [label="swap(&var_4[var_8], &var_4[var_9])"]
-	N11 [label="var_9 = var_5"]
-	N5 [label="var_13 = 42 + (((((var_8 * var_8) * (var_8 + 1)) * (var_8 + 2)) * (var_8 + 3)) % 4)"]
 	N0 [label="Function: swap"]
-	N9 -> N10
-	N2 -> N3
-	N8 -> N9
-	N6 -> N7
-	N483 -> N732
-	N483 -> N739
+	N88 [label="Function: quickSort"]
+	N5 [label="Function: partition"]
+	N4 [label="End of swap"]
+	N23 [label="if(var_4[var_9] <= var_7)"]
+	N86 [label="return var_8 + 1"]
+	N113 [label="var_13 = partition(var_10, var_11, var_12)"]
+	N7 [label="var_8 = var_5 - 1"]
+	N74 [label="var_8++"]
+	N3 [label="*var_2 = var_3"]
+	N8 [label="var_9 = var_5"]
+	N115 [label="quickSort(var_10, var_13 + 1, var_12)"]
+	N75 [label="swap(&var_4[var_8], &var_4[var_9])"]
+	N81 [label="var_9++"]
+	N89 [label="if((var_11 < var_12)  ||  (((var_3 * var_3) * (var_3 + 1)) % 2))"]
+	N121 [label="End of quickSort"]
+	N2 [label="*var_1 = (*var_2) + (((((var_3 * var_3) * (var_3 + 1)) * (var_3 + 2)) * (var_3 + 3)) % 4)"]
+	N6 [label="var_7 = var_4[var_6]"]
+	N114 [label="quickSort(var_10, var_11, var_13 - 1)"]
+	N85 [label="swap(&var_4[var_8 + 1], &var_4[var_6])"]
+	N11 [label="if(var_9 <= (var_6 - 1))"]
 	N1 -> N2
-	N10 -> N11
-	N1510 -> N1587
-	N732 -> N733
-	N4 -> N5
-	N303 -> N415
-	N739 -> N14
-	N415 -> N751
-	N1356 -> N1510
-	N3 -> N4
-	N754 -> N755
-	N751 -> N752
-	N755 -> N1356
-	N14 -> N483
-	N14 -> N303
-	N733 -> N739
-	N11 -> N14
-	N5 -> N6
 	N0 -> N1
+	N88 -> N89
+	N5 -> N6
+	N23 -> N74
+	N23 -> N81
+	N113 -> N114
+	N7 -> N8
+	N74 -> N75
+	N3 -> N4
+	N8 -> N11
+	N115 -> N121
+	N75 -> N81
+	N81 -> N11
+	N89 -> N113
+	N89 -> N121
+	N2 -> N3
+	N6 -> N7
+	N114 -> N115
+	N85 -> N86
+	N11 -> N23
+	N11 -> N85
 }

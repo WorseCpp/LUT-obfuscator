@@ -42,6 +42,7 @@ def characterize_edit_distance(ast):
     plt.title("Simplified CFG Edit Distance vs Steps")
     plt.savefig("fig.png")
     plt.show()
+    
 
 def proc_edit_dist_data():
     y= [np.float64(0.6), np.float64(10.3), np.float64(15.6), np.float64(24.1), np.float64(29.9), np.float64(24.4), np.float64(40.2), np.float64(65.3), np.float64(67.9), np.float64(80.2)]

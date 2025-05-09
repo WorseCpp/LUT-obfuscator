@@ -72,6 +72,47 @@ def simplify_ast(ast):
     
     return ast
 
+def remove_if_ones(ast):
+    def process_node(node):
+        # Process nested blocks if present.
+        if hasattr(node, "block_items") and node.block_items is not None:
+            node.block_items = process_block(node.block_items)
+        # If an if-statement with constant condition "1" is encountered,
+        # replace it with its true branch (if available) and ignore the false branch.
+        if isinstance(node, c_ast.If):
+            if (isinstance(node.cond, c_ast.Constant) and
+                node.cond.type == "int" and node.cond.value == "1"):
+                if node.iftrue:
+                    return process_node(node.iftrue)
+                else:
+                    return None
+            # Otherwise, process the children of the if-statement.
+            if node.iftrue:
+                node.iftrue = process_node(node.iftrue)
+            if node.iffalse:
+                node.iffalse = process_node(node.iffalse)
+        return node
+
+    def process_block(block_items):
+        new_block = []
+        for stmt in block_items:
+            new_stmt = process_node(stmt)
+            if new_stmt is None:
+                continue
+            # If the result is a compound statement with its own block_items, flatten it.
+            if isinstance(new_stmt, c_ast.Compound) and new_stmt.block_items:
+                new_block.extend(new_stmt.block_items)
+            else:
+                new_block.append(new_stmt)
+        return new_block
+
+    for i, node in enumerate(ast.ext):
+        if isinstance(node, c_ast.FuncDef) and node.body and getattr(node.body, "block_items", None):
+            node.body.block_items = process_block(node.body.block_items)
+        else:
+            ast.ext[i] = process_node(node)
+    return ast
+
 def score(tree, org_ast):
 
     tree_cfg = build_cfg_from_ast(simplify_ast(tree))
@@ -89,8 +130,9 @@ def score(tree, org_ast):
     return 500 + math.exp((node_count - node_cut)) - graph_edit_distance(org_cfg, n_cfg)    
 
 def score_complexity(tree, org_ast):
+
     generator = c_generator.CGenerator()
-    code = generator.visit(tree)
+    code = generator.visit(remove_if_ones(simplify_ast(tree)))
     open("code.c","w+").write(code)
     score_command = ["complexity", "--score", "--thresh=1", "code.c"]
     result = subprocess.run(score_command, capture_output=True, text=True)
@@ -105,4 +147,4 @@ def score_complexity(tree, org_ast):
         else:
             pass
 
-    return -out + 100000 * (len(code) > 100 * 250)
+    return -out + 100000 * (len(code) > 10 * 250)

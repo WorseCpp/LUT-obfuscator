@@ -25,18 +25,18 @@ import datetime
 # Explain how it works in the presentation
 # Send introductory slides beforehand
 
-def greedy(ast, itr = 100, steps = 10):
+def greedy(ast, itr = 100, steps = 10, scoring=score):
 
     ast = clean_and_preprocess(ast)
 
     org_ast = copy.deepcopy(ast)
     best_ast = copy.deepcopy(ast)
-    best_score = score(org_ast, best_ast)
+    best_score = scoring(org_ast, best_ast)
 
     scores = []
     for _ in tqdm(range(itr)):
         candidate = MC_mutate(copy.deepcopy(best_ast), steps, False)
-        candidate_score = score(candidate, org_ast)
+        candidate_score = scoring(candidate, org_ast)
         #print(candidate_score, simplify_cfg_graph(build_cfg_from_ast(candidate)).number_of_nodes())
         scores.append(best_score)
         if candidate_score <= best_score:
@@ -152,7 +152,6 @@ def grad_optimization(ast, iterations=100, steps = 10, scoring=score):
 
         cands = []
         for pos in range(len(hot_vector)):
-            
             hot_vector = np.array([0]*8)
             hot_vector[pos] = 1
 
@@ -163,16 +162,13 @@ def grad_optimization(ast, iterations=100, steps = 10, scoring=score):
 
         best_cand = min(cands, key=lambda k : k[1])
 
-        for i in range(len(hot_vector)):
-            if (cands[i] == best_cand):
-                print(i)
-
         if (best_cand[1] <= best_score):
             current_ast = best_cand[0]
             best_score = best_cand[1]
             best_ast = current_ast
         
         scores.append(best_score)
+        print(current_score, best_score)
 
         # Update best solution if candidate is better
        
@@ -222,52 +218,55 @@ def main():
 
     canon_cfg = simplify_cfg_graph(build_cfg_from_ast(simplify_ast(ast)))
 
-    
-    N = 1000
 
-    n_steps = 1
+    #return;
+    N = 200 // 3
 
-    r_trials = 1
+    n_steps = 3
 
-    print(score_complexity(code_to_ast(open("code.c","r").read()), ast))
+    r_trials = 10
+
+    print(score_complexity(code_to_ast(open("sample.c","r").read()), ast))
 
     scoring = score_complexity
+    proc_edit_dist_data()
+    #characterize_score(ast, scoring)
 
-    #greedy_scores, greedy_best_ast = avg_runs(ast, greedy, N, n_steps, r_trials)
-    #plt.plot(np.linspace(0, len(greedy_scores), len(greedy_scores)), greedy_scores, label=f"Greedy")
+    greedy_scores, greedy_best_ast = avg_runs(ast, greedy, N, n_steps, r_trials, scoring=scoring)
+    plt.plot(np.linspace(0, len(greedy_scores), len(greedy_scores)), greedy_scores, label=f"Greedy")
 
-    gradient_scores, grad_best_ast = avg_runs(ast, grad_optimization, N, n_steps, r_trials, scoring=scoring)
-    plt.plot(np.linspace(0, len(gradient_scores), len(gradient_scores)), gradient_scores, label=f"Gradient")
+    #gradient_scores, grad_best_ast = avg_runs(ast, grad_optimization, N, n_steps, r_trials, scoring=scoring)
+    #plt.plot(np.linspace(0, len(gradient_scores), len(gradient_scores)), gradient_scores, label=f"Gradient")
 
     t_int = 1.0
-    t_dec = round((.001)**(1 / (N*8)), 3)
+    t_dec = round((.001)**(1 / (N * 8)), 3)
 
-    simanneal_scores, sa_best_ast = avg_runs(ast, simulated_annealing_optimize, N*8, n_steps, r_trials, scoring=scoring, temp_initial=t_int, temp_decay=t_dec)
+    simanneal_scores, sa_best_ast = avg_runs(ast, simulated_annealing_optimize, N, n_steps, r_trials, scoring=scoring, temp_initial=t_int, temp_decay=t_dec)
 
-    plt.plot(np.linspace(0, len(simanneal_scores) // 8, len(simanneal_scores) // 8), simanneal_scores[::8], label=f"SA scores (T0 = {t_int}, td = {t_dec})")
-
+    plt.plot(np.linspace(0, len(simanneal_scores), len(simanneal_scores)), simanneal_scores, label=f"SA scores (T0 = {t_int}, td = {t_dec})")
 
     filename = datetime.datetime.now().strftime("best_asts_%Y-%m-%d_%H-%M-%S.c")
 
-    grad_cfg = build_cfg_from_ast(simplify_ast(grad_best_ast))
+    greedy_cfg = build_cfg_from_ast(simplify_ast(greedy_best_ast))
     sa_cfg = build_cfg_from_ast(simplify_ast(sa_best_ast))
 
-    grad_cfg = simplify_cfg_graph(grad_cfg)
+
+    greedy_cfg = simplify_cfg_graph(greedy_cfg)
     sa_cfg = simplify_cfg_graph(sa_cfg)
 
-    render_cfg(grad_cfg)
+    render_cfg(greedy_cfg)
     render_cfg(sa_cfg)
 
-    print(graph_edit_distance(grad_cfg, sa_cfg))
-    print(graph_edit_distance(grad_cfg, canon_cfg))
+    #print(graph_edit_distance(grad_cfg, sa_cfg))
+    print(graph_edit_distance(greedy_cfg, canon_cfg))
     print(graph_edit_distance(canon_cfg, sa_cfg))
 
 
     with open(filename, "w+") as f:
-        #f.write("greedy_best_ast")
-        #f.write(generator.visit(greedy_best_ast))
-        f.write("grad_best_ast\n")
-        f.write(generator.visit(grad_best_ast))
+        f.write("greedy_best_ast")
+        f.write(generator.visit(greedy_best_ast))
+        # f.write("grad_best_ast\n")
+        # f.write(generator.visit(grad_best_ast))
         f.write("sa_best_ast\n")
         f.write(generator.visit(sa_best_ast))
     print("ASTs saved to best_asts.pkl")
@@ -277,8 +276,8 @@ def main():
     
     # Prepare a dict with the scores.
     all_scores = {
-        #"g_scores": greedy_scores,
-        "gradient_scores": gradient_scores,
+        "g_scores": greedy_scores,
+        #"gradient_scores": gradient_scores,
         "sa_scores": simanneal_scores,  # using the averaged SA scores
         "sa_settings":{"t_int":t_int, "t_dec":t_dec}
     }
